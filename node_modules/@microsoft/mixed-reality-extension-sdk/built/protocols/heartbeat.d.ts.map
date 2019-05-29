@@ -1,0 +1,1 @@
+{"version":3,"file":"heartbeat.d.ts","sourceRoot":"","sources":["../../src/protocols/heartbeat.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,QAAQ,EAAE,MAAM,GAAG,CAAC;AAG7B;;;GAGG;AACH,qBAAa,SAAS;IAKN,OAAO,CAAC,QAAQ;IAJ5B;;;OAGG;gBACiB,QAAQ,EAAE,QAAQ;IAGtC;;OAEG;IACU,aAAa,CAAC,WAAW,EAAE,MAAM;IAMvC,IAAI;CAed"}

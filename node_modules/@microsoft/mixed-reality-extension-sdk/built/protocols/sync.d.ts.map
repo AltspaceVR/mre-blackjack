@@ -1,0 +1,1 @@
+{"version":3,"file":"sync.d.ts","sourceRoot":"","sources":["../../src/protocols/sync.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAGH,OAAO,EAAE,UAAU,EAAE,MAAM,IAAI,CAAC;AAEhC,OAAO,EAAE,QAAQ,EAAE,MAAM,YAAY,CAAC;AAEtC;;;GAGG;AACH,qBAAa,IAAK,SAAQ,QAAQ;gBAClB,IAAI,EAAE,UAAU;IAM5B,gBAAgB;IACT,cAAc;CAIxB"}

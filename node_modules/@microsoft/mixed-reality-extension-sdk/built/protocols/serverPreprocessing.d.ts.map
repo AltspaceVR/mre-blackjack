@@ -1,0 +1,1 @@
+{"version":3,"file":"serverPreprocessing.d.ts","sourceRoot":"","sources":["../../src/protocols/serverPreprocessing.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,UAAU,EAAE,MAAM,GAAG,CAAC;AAC/B,OAAO,EAAE,OAAO,EAAE,MAAM,IAAI,CAAC;AAC7B,OAAO,EAAE,eAAe,EAAE,MAAM,0BAA0B,CAAC;AAE3D;;GAEG;AACH,qBAAa,mBAAoB,YAAW,UAAU;;IAKlD,eAAe;IACR,UAAU,uKAGhB;CACJ"}

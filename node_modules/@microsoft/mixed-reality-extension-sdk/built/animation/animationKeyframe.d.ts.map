@@ -1,0 +1,1 @@
+{"version":3,"file":"animationKeyframe.d.ts","sourceRoot":"","sources":["../../src/animation/animationKeyframe.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,SAAS,EAAE,MAAM,IAAI,CAAC;AAE/B,MAAM,WAAW,iBAAiB;IAC9B,KAAK,EAAE,OAAO,CAAC,SAAS,CAAC,CAAC;IAC1B,IAAI,EAAE,MAAM,CAAC;CAChB"}

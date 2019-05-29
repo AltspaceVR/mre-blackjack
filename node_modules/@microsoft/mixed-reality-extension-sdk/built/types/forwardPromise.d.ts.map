@@ -1,0 +1,1 @@
+{"version":3,"file":"forwardPromise.d.ts","sourceRoot":"","sources":["../../src/types/forwardPromise.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH;;;;GAIG;AACH,MAAM,WAAW,cAAc,CAAC,CAAC,CAAE,SAAQ,OAAO,CAAC,CAAC,CAAC;IACjD,KAAK,CAAC,EAAE,CAAC,CAAC;CACb;AAED;;;;GAIG;AACH,wBAAgB,oBAAoB,CAAC,CAAC,EAClC,KAAK,EAAE,CAAC,EACR,OAAO,EAAE,OAAO,CAAC,CAAC,CAAC,GACpB,cAAc,CAAC,CAAC,CAAC,CAInB"}

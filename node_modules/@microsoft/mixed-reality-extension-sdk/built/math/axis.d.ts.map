@@ -1,0 +1,1 @@
+{"version":3,"file":"axis.d.ts","sourceRoot":"","sources":["../../src/math/axis.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,OAAO,EAAE,MAAM,GAAG,CAAC;AAE5B,8BAA8B;AAC9B,qBAAa,IAAI;IACb,aAAa;oBACK,CAAC,EAAI,OAAO;IAC9B,aAAa;oBACK,CAAC,EAAI,OAAO;IAC9B,aAAa;oBACK,CAAC,EAAI,OAAO;CACjC"}

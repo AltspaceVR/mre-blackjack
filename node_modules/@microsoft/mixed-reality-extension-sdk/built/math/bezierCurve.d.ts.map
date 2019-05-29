@@ -1,0 +1,1 @@
+{"version":3,"file":"bezierCurve.d.ts","sourceRoot":"","sources":["../../src/math/bezierCurve.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,6CAA6C;AAC7C,qBAAa,WAAW;IACpB;;;;;;;;OAQG;WACW,WAAW,CAAC,CAAC,EAAE,MAAM,EAAE,EAAE,EAAE,MAAM,EAAE,EAAE,EAAE,MAAM,EAAE,EAAE,EAAE,MAAM,EAAE,EAAE,EAAE,MAAM,GAAG,MAAM;CAwB/F"}

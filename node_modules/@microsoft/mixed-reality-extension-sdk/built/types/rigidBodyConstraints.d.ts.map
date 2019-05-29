@@ -1,0 +1,1 @@
+{"version":3,"file":"rigidBodyConstraints.d.ts","sourceRoot":"","sources":["../../src/types/rigidBodyConstraints.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH;;GAEG;AACH,oBAAY,oBAAoB;IAC5B,IAAI,SAAS;IACb,eAAe,sBAAsB;IACrC,eAAe,sBAAsB;IACrC,eAAe,sBAAsB;IACrC,cAAc,oBAAoB;IAClC,eAAe,sBAAsB;IACrC,eAAe,sBAAsB;IACrC,eAAe,sBAAsB;IACrC,cAAc,oBAAoB;IAClC,SAAS,eAAe;CAC3B"}

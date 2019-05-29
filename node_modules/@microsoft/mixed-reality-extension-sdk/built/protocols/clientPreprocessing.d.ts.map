@@ -1,0 +1,1 @@
+{"version":3,"file":"clientPreprocessing.d.ts","sourceRoot":"","sources":["../../src/protocols/clientPreprocessing.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,UAAU,EAAE,QAAQ,EAAE,MAAM,GAAG,CAAC;AACzC,OAAO,EAAE,OAAO,EAAE,MAAM,IAAI,CAAC;AAG7B;;GAEG;AACH,qBAAa,mBAAoB,YAAW,UAAU;IACtC,OAAO,CAAC,QAAQ;gBAAR,QAAQ,EAAE,QAAQ;IAItC,eAAe;IACR,UAAU,4IAiBhB;CACJ"}

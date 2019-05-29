@@ -1,0 +1,50 @@
+/*!
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+import { Angle, Orientation, Vector2 } from '.';
+/**
+ * This represents an arc in a 2d space.
+ */
+export declare class Arc2 {
+    /** Defines the start point of the arc */
+    startPoint: Vector2;
+    /** Defines the mid point of the arc */
+    midPoint: Vector2;
+    /** Defines the end point of the arc */
+    endPoint: Vector2;
+    /**
+     * Defines the center point of the arc.
+     */
+    centerPoint: Vector2;
+    /**
+     * Defines the radius of the arc.
+     */
+    radius: number;
+    /**
+     * Defines the angle of the arc (from mid point to end point).
+     */
+    angle: Angle;
+    /**
+     * Defines the start angle of the arc (from start point to middle point).
+     */
+    startAngle: Angle;
+    /**
+     * Defines the orientation of the arc (clock wise/counter clock wise).
+     */
+    orientation: Orientation;
+    /**
+     * Creates an Arc object from the three given points : start, middle and end.
+     * @param startPoint Defines the start point of the arc
+     * @param midPoint Defines the midlle point of the arc
+     * @param endPoint Defines the end point of the arc
+     */
+    constructor(
+    /** Defines the start point of the arc */
+    startPoint: Vector2, 
+    /** Defines the mid point of the arc */
+    midPoint: Vector2, 
+    /** Defines the end point of the arc */
+    endPoint: Vector2);
+}
+//# sourceMappingURL=arc2.d.ts.map

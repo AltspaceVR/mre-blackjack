@@ -1,0 +1,1 @@
+{"version":3,"file":"pipe.d.ts","sourceRoot":"","sources":["../../src/connection/pipe.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,UAAU,EAAqB,MAAM,GAAG,CAAC;AAGlD;;;GAGG;AACH,qBAAa,IAAI;IAEb,OAAO,CAAC,MAAM,CAAa;IAC3B,OAAO,CAAC,OAAO,CAAa;aAGjB,KAAK,EAAI,UAAU;aACnB,MAAM,EAAI,UAAU;;IAqB/B,OAAO,CAAC,YAAY;IAOpB,OAAO,CAAC,aAAa;CAMxB"}
