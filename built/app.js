@@ -29,7 +29,7 @@ class MREBlackjack {
                     app: { position: { x: 0, y: 0.5, z: 0 } }
                 },
                 text: {
-                    contents: "MREBlacjack!",
+                    contents: "MRE BlackJack!",
                     anchor: mixed_reality_extension_sdk_1.TextAnchorLocation.MiddleCenter,
                     color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
                     height: 0.3
@@ -122,5 +122,5 @@ class MREBlackjack {
             }];
     }
 }
-exports.default = HelloWorld;
+exports.default = MREBlackjack;
 //# sourceMappingURL=app.js.map
