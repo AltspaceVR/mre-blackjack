@@ -69,13 +69,13 @@ export default class MREBlackjack {
             actor: {
                 name: 'Text',
                 transform: {
-                    app: { position: { x: 0, y: 0.5, z: 0 } }
+                    app: { position: { x: 0, y: 0, z: 0 } }
                 },
                 text: {
                     contents: "Hit",
                     anchor: TextAnchorLocation.MiddleCenter,
                     color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.3
+                    height: 0.1,
                 }
             }
         });
@@ -94,8 +94,9 @@ export default class MREBlackjack {
                 parentId: this.hitLabel.id,
                 transform: {
                     local: {
-                        position: { x: 0, y: -1, z: 0 },
-                        scale: { x: 0.04, y: 0.04, z: 0.04 }
+                       
+                        scale: { x: 0.01, y: 0.01, z: 0.02 },
+                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                     }
                 }
             }
@@ -113,13 +114,13 @@ export default class MREBlackjack {
             actor: {
                 name: 'Text',
                 transform: {
-                    app: { position: { x: 3, y: 2, z: 0 } }
+                    app: { position: { x: 0.5, y: 0, z: 0 } }
                 },
                 text: {
                     contents: "Deal",
                     anchor: TextAnchorLocation.MiddleCenter,
                     color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.3
+                    height: 0.1,
                 }
             }
         });
@@ -140,8 +141,8 @@ export default class MREBlackjack {
             parentId: this.dealLabel.id,
             transform: {
                 local: {
-                    position: { x: 0, y: -1, z: 0 },
-                    scale: { x: 0.04, y: 0.04, z: 0.04 },
+                    scale: { x: 0.01, y: 0.01, z: 0.02 },
+                    rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                 }
             }
         }
@@ -160,7 +161,7 @@ export default class MREBlackjack {
             actor: {
                 name: 'Text',
                 transform: {
-                    app: { position: { x: 2, y: 1, z: 2} }
+                    app: { position: { x: 0, y: 0, z: 1.5} }
                 },
                 text: {
                     contents: `Test`,
@@ -220,11 +221,11 @@ export default class MREBlackjack {
     // Trigger the grow/shrink animations on hover.
     hitButtonBehavior.onHover('enter', () => {
         this.hitButton.animateTo(
-            { transform: { local: { scale: { x: 0.05, y: 0.05, z: 0.05 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
     });
     hitButtonBehavior.onHover('exit', () => {
         this.hitButton.animateTo(
-            { transform: { local: { scale: { x: 0.04, y: 0.04, z: 0.04 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
     });
 
     // When hit button is clicked trigger game dispatch to hit
@@ -249,11 +250,11 @@ export default class MREBlackjack {
     
         dealbuttonBehavior.onHover('enter', () => {
             this.dealButton.animateTo(
-                { transform: { local: { scale: { x: 0.05, y: 0.05, z: 0.05 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
         });
         dealbuttonBehavior.onHover('exit', () => {
             this.dealButton.animateTo(
-                { transform: { local: { scale: { x: 0.04, y: 0.04, z: 0.04 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
         });
     
         // When deal button is clicked trigger deal action.
