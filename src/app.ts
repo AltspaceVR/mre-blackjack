@@ -42,7 +42,7 @@ export default class MREBlackjack {
     private desk: Actor = null;
     private dealer: Actor = null;
 
-    private dealerCards: string[] = [];
+    private dealerCards: object = {};
 
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
@@ -76,7 +76,7 @@ export default class MREBlackjack {
                     app: { position: { x: 0, y: -3, z: 1} }
                 },
                 text: {
-                    contents: `Dealer Cards: ${this.dealerCards}`,
+                    contents: `Dealer Cards: ${this.dealerCards[0]}`,
                     anchor: TextAnchorLocation.MiddleCenter,
                     color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
                     height: 0.3
@@ -211,6 +211,7 @@ export default class MREBlackjack {
             game.dispatch(actions.deal());
             this.dealerCards.push(game.getState().dealerHoleCard);
             console.log(game.getState());
+            console.log(this.dealerCards[0]);
         });
 
     }
