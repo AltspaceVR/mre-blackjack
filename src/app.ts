@@ -10,17 +10,39 @@ import {
     AnimationWrapMode,
     ButtonBehavior,
     Context,
+    PrimitiveShape,
     Quaternion,
     TextAnchorLocation,
     Vector3
 } from '@microsoft/mixed-reality-extension-sdk';
 
 /**
+ * Imports the BlackJack engine.
+ */
+
+const blackjack = require('engine-blackjack');
+const actions = blackjack.actions;
+const Game = blackjack.Game;
+
+/**
+ * Instantiates a game of Blackjack, the game's state starts at READY. The  game's state will change based on actions.
+ */
+
+const game = new Game();
+
+/**
  * The main class of this app. All the logic goes here.
  */
+
 export default class MREBlackjack {
-    private text: Actor = null;
-    private cube: Actor = null;
+    private hitLabel: Actor = null;
+    private dealLabel: Actor = null;
+    private hitButton: Actor = null;
+    private dealButton: Actor = null;
+    private desk: Actor = null;
+    private dealer: Actor = null;
+
+    private dealerCards: string[] = [];
 
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
@@ -29,17 +51,47 @@ export default class MREBlackjack {
     /**
      * Once the context is "started", initialize the app.
      */
-    private started() {
+    private async started() {
         // Create a new actor with no mesh, but some text. This operation is asynchronous, so
         // it returns a "forward" promise (a special promise, as we'll see later).
-        const textPromise = Actor.CreateEmpty(this.context, {
+        const hitLabelPromise = Actor.CreateEmpty(this.context, {
             actor: {
                 name: 'Text',
                 transform: {
                     app: { position: { x: 0, y: 0.5, z: 0 } }
                 },
                 text: {
-                    contents: "MRE BlackJack!",
+                    contents: "Hit",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.3
+                }
+            }
+        });
+
+        const dealerPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'Text',
+                transform: {
+                    app: { position: { x: 0, y: -3, z: 1} }
+                },
+                text: {
+                    contents: `Dealer Cards: ${this.dealerCards}`,
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.3
+                }
+            }
+        });
+
+        const dealLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'Text',
+                transform: {
+                    app: { position: { x: 2, y: 0.5, z: 0 } }
+                },
+                text: {
+                    contents: "Deal",
                     anchor: TextAnchorLocation.MiddleCenter,
                     color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
                     height: 0.3
@@ -49,36 +101,20 @@ export default class MREBlackjack {
 
         // Even though the actor is not yet created in Altspace (because we didn't wait for the promise),
         // we can still get a reference to it by grabbing the `value` field from the forward promise.
-        this.text = textPromise.value;
-
-        // Here we create an animation on our text actor. Animations have three mandatory arguments:
-        // a name, an array of keyframes, and an array of events.
-        this.text.createAnimation(
-            // The name is a unique identifier for this animation. We'll pass it to "startAnimation" later.
-            "Spin", {
-                // Keyframes define the timeline for the animation: where the actor should be, and when.
-                // We're calling the generateSpinKeyframes function to produce a simple 20-second revolution.
-                keyframes: this.generateSpinKeyframes(20, Vector3.Up()),
-                // Events are points of interest during the animation. The animating actor will emit a given
-                // named event at the given timestamp with a given string value as an argument.
-                events: [],
-
-                // Optionally, we also repeat the animation infinitely. PingPong alternately runs the animation
-                // foward then backward.
-                wrapMode: AnimationWrapMode.PingPong
-            });
+        this.hitLabel = hitLabelPromise.value;
+        this.dealLabel = dealLabelPromise.value;
 
         // Load a glTF model
-        const cubePromise = Actor.CreateFromGLTF(this.context, {
+        const hitButtonPromise = Actor.CreateFromGLTF(this.context, {
             // at the given URL
             resourceUrl: `${this.baseUrl}/altspace-cube.glb`,
             // and spawn box colliders around the meshes.
             colliderType: 'box',
             // Also apply the following generic actor properties.
             actor: {
-                name: 'Altspace Cube',
+                name: 'Hit Button',
                 // Parent the glTF model to the text actor.
-                parentId: this.text.id,
+                parentId: this.hitLabel.id,
                 transform: {
                     local: {
                         position: { x: 0, y: -1, z: 0 },
@@ -88,61 +124,95 @@ export default class MREBlackjack {
             }
         });
 
-        // Grab that early reference again.
-        this.cube = cubePromise.value;
+        const dealButtonPromise = Actor.CreateFromGLTF(this.context, {
+            // at the given URL
+            resourceUrl: `${this.baseUrl}/altspace-cube.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Deal Button',
+                // Parent the glTF model to the text actor.
+                parentId: this.dealLabel.id,
+                transform: {
+                    local: {
+                        position: { x: 0, y: -1, z: 0 },
+                        scale: { x: 0.4, y: 0.4, z: 0.4 },
+                    }
+                }
+            }
+        });
 
-        // Create some animations on the cube.
-        this.cube.createAnimation(
-            'DoAFlip', {
-                keyframes: this.generateSpinKeyframes(1.0, Vector3.Right()),
-                events: []
-            });
+        const deskPromise = Actor.CreateFromGLTF(this.context, {
+            // at the given URL
+            resourceUrl: `${this.baseUrl}/blackjack-table.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Desk',
+                // Parent the glTF model to the text actor.
+                parentId: this.dealLabel.id,
+                transform: {
+                    local: {
+                        position: { x: 0, y: -3, z: 1 },
+                        scale: { x: .5, y: .5, z: .5 },
+                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+
+        // Grab that early reference again.
+        this.hitButton = hitButtonPromise.value;
+        this.dealButton = dealButtonPromise.value;
+        this.desk = deskPromise.value;
 
         // Now that the text and its animation are all being set up, we can start playing
         // the animation.
-        this.text.enableAnimation('Spin');
+        this.hitLabel.enableAnimation('Spin');
+        this.dealLabel.enableAnimation('Spin');
 
         // Set up cursor interaction. We add the input behavior ButtonBehavior to the cube.
         // Button behaviors have two pairs of events: hover start/stop, and click start/stop.
-        const buttonBehavior = this.cube.setBehavior(ButtonBehavior);
+        const hitButtonBehavior = this.hitButton.setBehavior(ButtonBehavior);
+        const dealbuttonBehavior = this.dealButton.setBehavior(ButtonBehavior);
 
         // Trigger the grow/shrink animations on hover.
-        buttonBehavior.onHover('enter', () => {
-            this.cube.animateTo(
+        hitButtonBehavior.onHover('enter', () => {
+            this.hitButton.animateTo(
                 { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.3, AnimationEaseCurves.EaseOutSine);
         });
-        buttonBehavior.onHover('exit', () => {
-            this.cube.animateTo(
+        hitButtonBehavior.onHover('exit', () => {
+            this.hitButton.animateTo(
                 { transform: { local: { scale: { x: 0.4, y: 0.4, z: 0.4 } } } }, 0.3, AnimationEaseCurves.EaseOutSine);
         });
 
-        // When clicked, do a 360 sideways.
-        buttonBehavior.onClick('pressed', () => {
-            this.cube.enableAnimation('DoAFlip');
+        // When hit button is clicked trigger game dispatch to hit
+        hitButtonBehavior.onClick('pressed', () => {
+            this.hitButton.enableAnimation('DoAFlip');
+            game.dispatch(actions.hit("right"));
+            console.log(game.getState());
+
         });
+
+        dealbuttonBehavior.onHover('enter', () => {
+            this.dealButton.animateTo(
+                { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.3, AnimationEaseCurves.EaseOutSine);
+        });
+        dealbuttonBehavior.onHover('exit', () => {
+            this.dealButton.animateTo(
+                { transform: { local: { scale: { x: 0.4, y: 0.4, z: 0.4 } } } }, 0.3, AnimationEaseCurves.EaseOutSine);
+        });
+
+        // When deal button is clicked trigger deal action.
+        dealbuttonBehavior.onClick('pressed', () => {
+            this.dealButton.enableAnimation('DoAFlip');
+            game.dispatch(actions.deal());
+            this.dealerCards.push(game.getState().dealerHoleCard);
+            console.log(game.getState());
+        });
+
     }
 
-    /**
-     * Generate keyframe data for a simple spin animation.
-     * @param duration The length of time in seconds it takes to complete a full revolution.
-     * @param axis The axis of rotation in local space.
-     */
-    private generateSpinKeyframes(duration: number, axis: Vector3): AnimationKeyframe[] {
-        return [{
-            time: 0 * duration,
-            value: { transform: { local: { rotation: Quaternion.RotationAxis(axis, 0) } } }
-        }, {
-            time: 0.25 * duration,
-            value: { transform: { local: { rotation: Quaternion.RotationAxis(axis, Math.PI / 2) } } }
-        }, {
-            time: 0.5 * duration,
-            value: { transform: { local: { rotation: Quaternion.RotationAxis(axis, Math.PI) } } }
-        }, {
-            time: 0.75 * duration,
-            value: { transform: { local: { rotation: Quaternion.RotationAxis(axis, 3 * Math.PI / 2) } } }
-        }, {
-            time: 1 * duration,
-            value: { transform: { local: { rotation: Quaternion.RotationAxis(axis, 2 * Math.PI) } } }
-        }];
-    }
 }
