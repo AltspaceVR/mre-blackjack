@@ -39,8 +39,11 @@ export default class MREBlackjack {
     private dealLabel: Actor;
     private hitButton: Actor;
     private dealButton: Actor;
+    private dealerCards: Actor;
     private desk: Actor;
-    private dealer: Actor;
+    private blackjackDealer: Actor;
+    private barStool: Actor;
+    private collisionBox: Actor;
 
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
@@ -54,15 +57,18 @@ export default class MREBlackjack {
         await Promise.all([
 
             this.createDealButton(),
-            this.createDealer(),
+            this.createDealerCards(),
             this.createHitButton(),
             this.createDesk(),
-            this.createDealer()
+            this.createDealerCards(),
+            this.createBlackJackDealer(),
+            this.createStool()
 
         ]);
 
         this.hitAnimation();
         this.dealAnimation();
+        this.enterGame();
     }
 
     private createHitButton() {
@@ -150,22 +156,68 @@ export default class MREBlackjack {
         this.dealButton = dealButtonPromise.value;
     }
 
-    private createDealer() {
-        const dealerPromise = Actor.CreateEmpty(this.context, {
+    private createDealerCards() {
+        const dealerCardsPromise = Actor.CreateEmpty(this.context, {
             actor: {
                 name: 'Text',
                 transform: {
                     app: { position: { x: 0, y: 0, z: 1.5} }
                 },
                 text: {
-                    contents: `Test`,
+                    contents: ``,
                     anchor: TextAnchorLocation.MiddleCenter,
                     color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
                     height: 0.3
                 }
             }
         });
-        this.dealer = dealerPromise.value;
+        this.dealerCards = dealerCardsPromise.value;
+    }
+
+    private createBlackJackDealer() {
+
+        const blackjackDealerPromise = Actor.CreateFromGLTF(this.context, {
+            // at the given URL
+            resourceUrl: `${this.baseUrl}/phil.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Phil',
+                // Parent the glTF model to the text actor.
+                transform: {
+                    local: {
+                        position: { x: 0, y: -0.5, z: 3.1 },
+                        scale: { x: .3, y: .3, z: .3 },
+                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.blackjackDealer = blackjackDealerPromise.value;
+
+    }
+
+    private createStool() {
+
+        const stoolPromise = Actor.CreateFromGLTF(this.context, {
+            // at the given URL
+            resourceUrl: `${this.baseUrl}/bar-stool.glb`,
+            colliderType: 'none',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Bar Stool',
+                transform: {
+                    local: {
+                        position: { x: -1, y: -2.5, z: -1.5 },
+                        scale: { x: .3, y: .3, z: .3 },
+                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.barStool = stoolPromise.value;
+
     }
 
     private createDesk() {
@@ -239,8 +291,24 @@ export default class MREBlackjack {
             game.dispatch(actions.deal());
             console.log(game.getState());
 
-            this.dealer.text.contents = '';
-            this.dealer.text.contents = game.getState().dealerCards[0].toString();
+            this.dealerCards.text.contents = '';
+// tslint:disable-next-line: max-line-length
+            this.dealerCards.text.contents = `Value:${game.getState().dealerCards[0].text} Suite: ${game.getState().dealerCards[0].suite}`;
+        });
+
+       }
+
+       private enterGame() {
+
+        const barStoolBehavior = this.barStool.setBehavior(ButtonBehavior);
+
+        barStoolBehavior.onTarget('enter', () => {
+            game.dispatch(actions.deal());
+            console.log(game.getState());
+
+            this.dealerCards.text.contents = '';
+// tslint:disable-next-line: max-line-length
+            this.dealerCards.text.contents = `Value:${game.getState().dealerCards[0].text} Suite: ${game.getState().dealerCards[0].suite}`;
         });
 
        }
