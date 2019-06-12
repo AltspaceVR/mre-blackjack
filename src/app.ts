@@ -45,6 +45,9 @@ export default class MREBlackjack {
     private hitButton: Actor;
     private dealLabel: Actor;
     private dealButton: Actor;
+    private stayLabel: Actor;
+    private stayButton: Actor;
+    
     private desk: Actor;
     private blackjackDealer: Actor;
 
@@ -61,12 +64,15 @@ export default class MREBlackjack {
 
             this.createDealButton(),
             this.createHitButton(),
+            this.createStayButton(),
             this.createDesk(),
             this.createBlackJackDealer(),
 
         ]);
+
         this.hitAnimation();
         this.dealAnimation();
+        this.stayAnimation();
 
     }
 
@@ -110,6 +116,49 @@ export default class MREBlackjack {
             }
         });
         this.hitButton = hitButtonPromise.value;
+
+    }
+
+    private createStayButton() {
+        const stayLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'Text',
+                transform: {
+                    // Positions the text
+                    app: { position: { x: 1, y: 0, z: 0.4 } }
+                },
+                // Here we're configuring the properties of the displayed text.
+                text: {
+                    contents: "Stay",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        // Assigns the currently null Actor to the promise value
+        this.stayLabel = stayLabelPromise.value;
+
+        const stayButtonPromise = Actor.CreateFromGLTF(this.context, {
+            // assigning the actor an art asset
+            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Stay Button',
+                // Parent the glTF model to the text actor.
+                parentId: this.stayLabel.id,
+                transform: {
+                    local: {
+                        scale: { x: 0.015, y: 0.015, z: 0.01 },
+                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.stayButton = stayButtonPromise.value;
 
     }
 
@@ -335,6 +384,37 @@ export default class MREBlackjack {
             this.createDealerCards();
             this.createPlayerCards();
         });
+       }
+
+       private stayAnimation() {
+
+        this.stayLabel.enableAnimation('Spin');
+
+        // Button behaviors have two pairs of events: hover start/stop, and click start/stop.
+
+        const stayButtonBehavior = this.stayButton.setBehavior(ButtonBehavior);
+
+        stayButtonBehavior.onHover('enter', () => {
+            this.stayButton.animateTo(
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+        });
+        stayButtonBehavior.onHover('exit', () => {
+            this.stayButton.animateTo(
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+        });
+
+        // When deal button is clicked trigger deal action.
+        stayButtonBehavior.onClick(() => {
+
+            this.stayButton.enableAnimation('DoAFlip');
+            game.dispatch(actions.stand('right'));
+            // console.log(game.getState());
+            this.createDealerCards();
+            this.createPlayerCards();
+        });
+
        }
 
 }
