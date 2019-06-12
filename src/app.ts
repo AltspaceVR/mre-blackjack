@@ -19,6 +19,7 @@ import {
     Plane,
 } from '@microsoft/mixed-reality-extension-sdk';
 import { platform } from 'os';
+import { ENGINE_METHOD_ALL } from 'constants';
 
 
 /**
@@ -66,17 +67,32 @@ export default class MREBlackjack {
             this.createDealerCards(),
             this.createHitButton(),
             this.createDesk(),
-            this.createDealerCards(),
             this.createBlackJackDealer(),
-            this.createPlayerCards()
 
         ]);
 
+        if (game.getState().state === 'player-turn-right'){
+            await Promise.all([
+                this.createPlayerCards()
+            ])
+        }
         this.hitAnimation();
         this.dealAnimation();
 
+        
 
     }
+
+    // private gameLoop(){
+    //     switch(game.getState().stage) {
+    //         case game.getState().stage == 'player-turn-right':
+    //                 this.dealerCardsLabel.text.contents = `${game.getState().dealerCards[0].text} Of ${game.getState().dealerCards[0].suite}`;
+    //                 this.playerCardsLabel.text.contents = `${game.getState().handInfo.right.cards[0].text} and ${game.getState().handInfo.right.cards[1].text}`;
+    //                 break;
+                  
+
+    //     }
+    // }
 
     private createHitButton() {
         const hitLabelPromise = Actor.CreateEmpty(this.context, {
@@ -180,8 +196,6 @@ export default class MREBlackjack {
         });
         this.dealerCardsLabel = dealerCardsLabelPromise.value;
 
-    
-
         // Load a glTF model
         const dealerCardsPromise = Actor.CreateFromGLTF(this.context, {
         // at the given URL
@@ -206,43 +220,55 @@ export default class MREBlackjack {
     }
 
     private createPlayerCards() {
-        const playerCardsLabelPromise = Actor.CreateEmpty(this.context, {
+
+        let handArray = game.getState().handInfo.right.cards;
+
+        for(let cards = 0; cards < handArray.length; cards++){
+             Actor.CreateEmpty(this.context, {
+                actor: {
+                    name: 'Text',
+                    transform: {
+                        app: { position: { x: cards, y: cards, z: 0} }
+                    },
+                    text: {
+                        contents: `${handArray[cards].value}`,
+                        anchor: TextAnchorLocation.MiddleCenter,
+                        color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                        height: 0.3
+                    }
+                }
+            }); 
+            // Load a glTF model
+             Actor.CreateFromGLTF(this.context, {
+            // at the given URL
+            resourceUrl: `${this.baseUrl}/playingcard2.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
             actor: {
-                name: 'Text',
+                name: 'Deal Button',
+                // Parent the glTF model to the text actor.
                 transform: {
-                    app: { position: { x: 0, y: 0, z: 0} }
-                },
-                text: {
-                    contents: '',
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.3
+                    local: {
+                        scale: { x: 5, y: 5, z: 5 },
+                        position: {  x: cards, y: cards, z: cards },
+                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                    }
                 }
             }
-        });
-        this.playerCardsLabel = playerCardsLabelPromise.value;
-
-        // Load a glTF model
-        const playerCardsPromise = Actor.CreateFromGLTF(this.context, {
-        // at the given URL
-        resourceUrl: `${this.baseUrl}/playingcard2.glb`,
-        // and spawn box colliders around the meshes.
-        colliderType: 'box',
-        // Also apply the following generic actor properties.
-        actor: {
-            name: 'Deal Button',
-            // Parent the glTF model to the text actor.
-            transform: {
-                local: {
-                    scale: { x: 5, y: 5, z: 5 },
-                    position: {  x: 0, y: 0, z: 0 },
-                    rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
-                }
-            }
+        }); 
         }
-    });
+        
+    }
 
-        this.playerCards = playerCardsPromise.value;
+    private getPlayerHandInfo(): [] {
+        // game.getState.handInfo.forEach((element: any) => {
+
+        //     element.text;
+
+        // });
+
+        return game.getState().handInfo.right.cards;
     }
 
     private createBlackJackDealer() {
@@ -313,7 +339,7 @@ export default class MREBlackjack {
         console.log(game.getState());
 
         // tslint:disable-next-line: max-line-length
-        this.playerCards.text.contents = `${game.getState().handInfo.right.cards[0]}`;
+        this.playerCardsLabel.text.contents = `${game.getState().handInfo.right.cards[0]}`;
     });
 
        }
@@ -338,18 +364,21 @@ export default class MREBlackjack {
 
         // When deal button is clicked trigger deal action.
         dealbuttonBehavior.onClick(() => {
+
             this.dealButton.enableAnimation('DoAFlip');
             game.dispatch(actions.deal());
-            console.log(game.getState());
+            // console.log(game.getState());
 
-            this.dealerCardsLabel.text.contents = null;
+            // this.dealerCardsLabel.text.contents = null;
 // tslint:disable-next-line: max-line-length
-            this.dealerCardsLabel.text.contents = `${game.getState().dealerCards[0].text} Of ${game.getState().dealerCards[0].suite}`;
+            // this.dealerCardsLabel.text.contents = `${game.getState().dealerCards[0].text} Of ${game.getState().dealerCards[0].suite}`;
 
-            console.log(game.getState().handInfo.right.cards[0]);
-            this.playerCardsLabel.text.contents = `${game.getState().handInfo.right.cards[0].text} and ${game.getState().handInfo.right.cards[1].text}`;
+            // this.playerCardsLabel.text.contents = `${game.getState().handInfo.right.cards[0].text} and ${game.getState().handInfo.right.cards[1].text}`;
+            console.log(this.getPlayerHandInfo());
+            this.createPlayerCards()
+            console.log(this.playerCardsLabel.transform.local.position.x)
+
         });
-
        }
 
 }
