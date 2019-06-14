@@ -47,9 +47,11 @@ export default class MREBlackjack {
     private dealButton: Actor;
     private stayLabel: Actor;
     private stayButton: Actor;
-    
+    private playerCardLabel: Actor;
+    private playerCard: Actor;
     private desk: Actor;
     private blackjackDealer: Actor;
+    private loads: Array<ForwardPromise<Actor>> = [];
 
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
@@ -74,6 +76,67 @@ export default class MREBlackjack {
         this.dealAnimation();
         this.stayAnimation();
 
+    }
+
+    private displayWinner() {
+
+            if (game.getState().stage === 'done'){
+// tslint:disable-next-line: max-line-length
+                if (game.getState().dealerHasBlackjack || game.getState().handInfo.right.playerHasBusted === true || game.getState().handInfo.right.playerValue.hi < game.getState().dealerValue.hi){
+
+                    Actor.CreateEmpty(this.context, {
+                        actor: {
+                            name: 'dealer win',
+                            transform: {
+                                // Positions the text
+                                app: { position: { x: 0.5, y: 1, z: 0 } }
+                            },
+                            // Here we're configuring the properties of the displayed text.
+                            text: {
+                                contents: "Dealer Wins! :C",
+                                anchor: TextAnchorLocation.MiddleCenter,
+                                color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                                height: 0.1,
+                            }
+                        }
+                    });
+                    // game.setState({stage: 'ready'});
+                    // console.log(this.loads)
+                    // this.loads.forEach((load)=>{
+                    //     load.value.destroy()
+                    //     if(this.loads.length === 0){
+                    //         return this.loads;
+                    //     }
+                    // })
+// tslint:disable-next-line: max-line-length
+                } else if (game.getState().handInfo.right.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.right.playerValue.hi > game.getState().dealerValue.hi){
+                    Actor.CreateEmpty(this.context, {
+                        actor: {
+                            name: 'player win',
+                            transform: {
+                                // Positions the text
+                                app: { position: { x: 0.5, y: 1, z: 0 } }
+                            },
+                            // Here we're configuring the properties of the displayed text.
+                            text: {
+                                contents: "You Win! :D",
+                                anchor: TextAnchorLocation.MiddleCenter,
+                                color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                                height: 0.1,
+                            }
+                        }
+                    });
+                    // game.setState({stage: 'ready'});
+                  
+                    // this.loads.forEach((load)=>{
+                    //     load.value.destroy()
+
+                    //     if(this.loads.length === 0){
+                    //         return this.loads;
+                    //     }
+                    // })
+                }
+            }
     }
 
     private createHitButton() {
@@ -244,11 +307,12 @@ export default class MREBlackjack {
 
     private createPlayerCards() {
 
+        
         const handArray = game.getState().handInfo.right.cards;
         let cardPosition = 0;
 
         for(let cards = 0; cards < handArray.length; cards++){
-             Actor.CreateEmpty(this.context, {
+      let playerLabelPromise =  Actor.CreateEmpty(this.context, {
                 actor: {
                     name: 'Text',
                     transform: {
@@ -263,7 +327,7 @@ export default class MREBlackjack {
                 }
             });
             // Load a glTF model
-             Actor.CreateFromGLTF(this.context, {
+       let playCardPromise = Actor.CreateFromGLTF(this.context, {
             // at the given URL
             resourceUrl: `${this.baseUrl}/playingcard2.glb`,
             // and spawn box colliders around the meshes.
@@ -271,7 +335,7 @@ export default class MREBlackjack {
             // Also apply the following generic actor properties.
             actor: {
                 name: 'Player Card',
-                // Parent the glTF model to the text actor.
+                // Parent the glTF model to the text actor. 
                 transform: {
                     local: {
                         scale: { x: 5, y: 5, z: 5 },
@@ -281,6 +345,10 @@ export default class MREBlackjack {
                 }
             }
         });
+            this.playerCard = playCardPromise.value
+            this.playerCardLabel = playerLabelPromise.value
+            this.loads.push(playCardPromise, playerLabelPromise)
+
              cardPosition += 0.1;
         }
     }
@@ -350,9 +418,10 @@ export default class MREBlackjack {
         hitButtonBehavior.onClick(() => {
         this.hitButton.enableAnimation('DoAFlip');
         game.dispatch(actions.hit("right"));
-        console.log(game.getState());
+        // console.log(game.getState());
         this.createDealerCards();
         this.createPlayerCards();
+        this.displayWinner();
     });
 
        }
@@ -380,9 +449,9 @@ export default class MREBlackjack {
 
             this.dealButton.enableAnimation('DoAFlip');
             game.dispatch(actions.deal());
-            // console.log(game.getState());
             this.createDealerCards();
             this.createPlayerCards();
+            this.displayWinner();
         });
        }
 
@@ -410,9 +479,13 @@ export default class MREBlackjack {
 
             this.stayButton.enableAnimation('DoAFlip');
             game.dispatch(actions.stand('right'));
-            // console.log(game.getState());
+            
             this.createDealerCards();
             this.createPlayerCards();
+            this.displayWinner();
+            // console.log(game.getState())
+            
+           
         });
 
        }
