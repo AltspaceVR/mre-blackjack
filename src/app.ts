@@ -17,6 +17,8 @@ import {
     RigidBody,
     ForwardPromise,
     Plane,
+    Sound,
+    Asset,
 } from '@microsoft/mixed-reality-extension-sdk';
 import { platform } from 'os';
 import { ENGINE_METHOD_ALL } from 'constants';
@@ -41,17 +43,15 @@ const game = new Game();
  */
 
 export default class MREBlackjack {
+    private rootActor: Actor;
     private hitLabel: Actor;
     private hitButton: Actor;
     private dealLabel: Actor;
     private dealButton: Actor;
     private stayLabel: Actor;
     private stayButton: Actor;
-    private playerCardLabel: Actor;
-    private playerCard: Actor;
     private desk: Actor;
     private blackjackDealer: Actor;
-    private loads: Array<ForwardPromise<Actor>> = [];
 
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
@@ -69,6 +69,7 @@ export default class MREBlackjack {
             this.createStayButton(),
             this.createDesk(),
             this.createBlackJackDealer(),
+            this.createRootActor(),
 
         ]);
 
@@ -86,6 +87,7 @@ export default class MREBlackjack {
 
                     Actor.CreateEmpty(this.context, {
                         actor: {
+                            parentId: this.rootActor.id,
                             name: 'dealer win',
                             transform: {
                                 // Positions the text
@@ -100,18 +102,14 @@ export default class MREBlackjack {
                             }
                         }
                     });
-                    // game.setState({stage: 'ready'});
-                    // console.log(this.loads)
-                    // this.loads.forEach((load)=>{
-                    //     load.value.destroy()
-                    //     if(this.loads.length === 0){
-                    //         return this.loads;
-                    //     }
-                    // })
+                    game.setState({stage: 'ready'});
+                    this.rootActor.destroy();
+                //   this.createRootActor();
 // tslint:disable-next-line: max-line-length
                 } else if (game.getState().handInfo.right.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.right.playerValue.hi > game.getState().dealerValue.hi){
                     Actor.CreateEmpty(this.context, {
                         actor: {
+                            parentId: this.rootActor.id,
                             name: 'player win',
                             transform: {
                                 // Positions the text
@@ -126,19 +124,33 @@ export default class MREBlackjack {
                             }
                         }
                     });
-                    // game.setState({stage: 'ready'});
-                  
-                    // this.loads.forEach((load)=>{
-                    //     load.value.destroy()
-
-                    //     if(this.loads.length === 0){
-                    //         return this.loads;
-                    //     }
-                    // })
+                    game.setState({stage: 'ready'});
+                    this.rootActor.destroy();
+                    // this.createRootActor();
                 }
             }
     }
 
+    private createRootActor() {
+
+        const rootActorPromise = Actor.CreateEmpty(this.context, {
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Root Actor',
+                // Parent the glTF model to the text actor.
+                transform: {
+                    local: {
+                        scale: { x: 1, y: 1, z: 1 },
+                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.rootActor = rootActorPromise.value;
+
+
+
+    }
     private createHitButton() {
         const hitLabelPromise = Actor.CreateEmpty(this.context, {
             actor: {
@@ -160,7 +172,7 @@ export default class MREBlackjack {
         // Assigns the currently null Actor to the promise value
         this.hitLabel = hitLabelPromise.value;
 
-        const hitButtonPromise = Actor.CreateFromGLTF(this.context, {
+        const hitButtonPromise = Actor.CreateFromGltf(this.context, {
             // assigning the actor an art asset
             resourceUrl: `${this.baseUrl}/card-button.glb`,
             // and spawn box colliders around the meshes.
@@ -203,7 +215,7 @@ export default class MREBlackjack {
         // Assigns the currently null Actor to the promise value
         this.stayLabel = stayLabelPromise.value;
 
-        const stayButtonPromise = Actor.CreateFromGLTF(this.context, {
+        const stayButtonPromise = Actor.CreateFromGltf(this.context, {
             // assigning the actor an art asset
             resourceUrl: `${this.baseUrl}/card-button.glb`,
             // and spawn box colliders around the meshes.
@@ -245,7 +257,7 @@ export default class MREBlackjack {
         this.dealLabel = dealLabelPromise.value;
 
         // Load a glTF model
-        const dealButtonPromise = Actor.CreateFromGLTF(this.context, {
+        const dealButtonPromise = Actor.CreateFromGltf(this.context, {
         // at the given URL
         resourceUrl: `${this.baseUrl}/card-button.glb`,
         // and spawn box colliders around the meshes.
@@ -275,6 +287,7 @@ export default class MREBlackjack {
 
             Actor.CreateEmpty(this.context, {
                 actor: {
+                    parentId: this.rootActor.id,
                     name: 'Text',
                     transform: {
                         app: { position: { x: cardPosition, y: 0, z: 1} }
@@ -288,9 +301,10 @@ export default class MREBlackjack {
                 }
             });
 
-            Actor.CreateFromGLTF(this.context, {
+            Actor.CreateFromGltf(this.context, {
             resourceUrl: `${this.baseUrl}/playingcard2.glb`,
             actor: {
+                parentId: this.rootActor.id,
                 name: 'Dealer Card',
                 transform: {
                     local: {
@@ -307,13 +321,13 @@ export default class MREBlackjack {
 
     private createPlayerCards() {
 
-        
         const handArray = game.getState().handInfo.right.cards;
         let cardPosition = 0;
 
         for(let cards = 0; cards < handArray.length; cards++){
-      let playerLabelPromise =  Actor.CreateEmpty(this.context, {
+            Actor.CreateEmpty(this.context, {
                 actor: {
+                    parentId: this.rootActor.id,
                     name: 'Text',
                     transform: {
                         app: { position: { x: cardPosition, y: cardPosition, z: 0} }
@@ -327,13 +341,14 @@ export default class MREBlackjack {
                 }
             });
             // Load a glTF model
-       let playCardPromise = Actor.CreateFromGLTF(this.context, {
+            Actor.CreateFromGltf(this.context, {
             // at the given URL
             resourceUrl: `${this.baseUrl}/playingcard2.glb`,
             // and spawn box colliders around the meshes.
             colliderType: 'box',
             // Also apply the following generic actor properties.
             actor: {
+                parentId: this.rootActor.id,
                 name: 'Player Card',
                 // Parent the glTF model to the text actor. 
                 transform: {
@@ -345,17 +360,15 @@ export default class MREBlackjack {
                 }
             }
         });
-            this.playerCard = playCardPromise.value
-            this.playerCardLabel = playerLabelPromise.value
-            this.loads.push(playCardPromise, playerLabelPromise)
 
-             cardPosition += 0.1;
+
+            cardPosition += 0.1;
         }
     }
 
     private createBlackJackDealer() {
 
-        const blackjackDealerPromise = Actor.CreateFromGLTF(this.context, {
+        const blackjackDealerPromise = Actor.CreateFromGltf(this.context, {
             // at the given URL
             resourceUrl: `${this.baseUrl}/phil.glb`,
             // and spawn box colliders around the meshes.
@@ -379,7 +392,7 @@ export default class MREBlackjack {
 
     private createDesk() {
 
-        const deskPromise = Actor.CreateFromGLTF(this.context, {
+        const deskPromise = Actor.CreateFromGltf(this.context, {
             // at the given URL
             resourceUrl: `${this.baseUrl}/blackjack-table.glb`,
             // and spawn box colliders around the meshes.
@@ -479,13 +492,10 @@ export default class MREBlackjack {
 
             this.stayButton.enableAnimation('DoAFlip');
             game.dispatch(actions.stand('right'));
-            
             this.createDealerCards();
             this.createPlayerCards();
             this.displayWinner();
-            // console.log(game.getState())
-            
-           
+            // console.log(game.getState())     
         });
 
        }
