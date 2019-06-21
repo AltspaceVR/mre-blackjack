@@ -290,7 +290,8 @@ export default class MREBlackjack {
                     parentId: this.rootActor.id,
                     name: 'Text',
                     transform: {
-                        app: { position: { x: cardPosition, y: 0, z: 1} }
+                        app: { position: { x: cardPosition, y: 0, z: 1},
+                        rotation: Quaternion.FromEulerAngles(1200, -0, 0), }
                     },
                     text: {
                         contents: `${handArray[cards].value}`,
