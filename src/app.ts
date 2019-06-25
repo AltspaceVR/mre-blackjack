@@ -24,19 +24,6 @@ import { platform } from 'os';
 import { ENGINE_METHOD_ALL } from 'constants';
 
 
-/**
- * Imports the BlackJack engine.
- */
-
-const blackjack = require('engine-blackjack');
-const actions = blackjack.actions;
-const Game = blackjack.Game;
-
-/**
- * Instantiates a game of Blackjack, the game's state starts at READY. The  game's state will change based on actions.
- */
-
-const game = new Game();
 
 /**
  * Imports the BlackJack engine.
@@ -51,6 +38,8 @@ const Game = blackjack.Game;
  */
 
 const game = new Game();
+
+// game.setState({rules: {insurance: false}});
 
 /**
  * The main class of this app. All the logic goes here.
@@ -66,6 +55,8 @@ export default class MREBlackjack {
     private stayButton: Actor;
     private newRoundLabel: Actor;
     private newRoundButton: Actor;
+    private splitLabel: Actor;
+    private splitButton: Actor;
     private desk: Actor;
     private blackjackDealer: Actor;
 
@@ -87,6 +78,7 @@ export default class MREBlackjack {
             this.createBlackJackDealer(),
             this.createRootActor(),
             this.createNewRoundButton(),
+            this.createSplitButton(),
 
         ]).catch(() => {
                 console.log('Hello there');
@@ -96,6 +88,7 @@ export default class MREBlackjack {
         this.dealAnimation();
         this.stayAnimation();
         this.newRoundAnimation();
+        this.splitAnimation();
 
     }
 
@@ -122,7 +115,7 @@ export default class MREBlackjack {
                             }
                         }
                     });
-                    game.setState({stage: 'ready'});
+                    // game.setState({stage: 'ready'});
 
 // tslint:disable-next-line: max-line-length
                 } else if (game.getState().handInfo.right.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.right.playerValue.hi > game.getState().dealerValue.hi ){
@@ -143,7 +136,7 @@ export default class MREBlackjack {
                             }
                         }
                     });
-                    game.setState({stage: 'ready'});
+                    // game.setState({stage: 'ready'});
                 }
             }
     }
@@ -373,22 +366,67 @@ export default class MREBlackjack {
         }
     }
 
+    private async createSplitButton() {
+        const splitLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'Text',
+                transform: {
+                    // Positions the text
+                    app: { position: { x: 0.5, y: 0, z: 0.4 } }
+                },
+                // Here we're configuring the properties of the displayed text.
+                text: {
+                    contents: "Split",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        // Assigns the currently null Actor to the promise value
+        this.splitLabel = splitLabelPromise.value;
+
+        const splitButtonPromise = Actor.CreateFromGltf(this.context, {
+            // assigning the actor an art asset
+            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Hit Button',
+                // Parent the glTF model to the text actor.
+                parentId: this.splitLabel.id,
+                transform: {
+                    local: {
+                        scale: { x: 0.01, y: 0.01, z: 0.02 },
+                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.splitButton = splitButtonPromise.value;
+
+    }
+
     private async createPlayerCards() {
+        const rightHandArray = game.getState().handInfo.right.cards;
+        const leftHandArray = game.getState().handInfo.left.cards;
+        let rightCardPosition = 0;
+        let leftCardPositionX = -0.5;
+        let leftCardPositionY = 0;
 
-        const handArray = game.getState().handInfo.right.cards;
-        let cardPosition = 0;
-
-        for(let cards = 0; cards < handArray.length; cards++){
+        for(let card = 0; card < rightHandArray.length; card++){
             Actor.CreateEmpty(this.context, {
                 actor: {
                     parentId: this.rootActor.id,
-                    name: 'Player Card Text',
+                    name: 'Player Card Text Right',
                     transform: {
-                        app: { position: { x: cardPosition, y: cardPosition, z: 0},
+                        app: { position: { x: rightCardPosition, y: rightCardPosition, z: 0},
                         rotation: Quaternion.FromEulerAngles(1200, -0, 0), }
                     },
                     text: {
-                        contents: `${handArray[cards].value}`,
+                        contents: `${rightHandArray[card].value}`,
                         anchor: TextAnchorLocation.MiddleCenter,
                         color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
                         height: 0.3
@@ -404,19 +442,63 @@ export default class MREBlackjack {
             // Also apply the following generic actor properties.
             actor: {
                 parentId: this.rootActor.id,
-                name: 'Player Card',
+                name: 'Player Card Right',
                 // Parent the glTF model to the text actor. 
                 transform: {
                     local: {
                         scale: { x: 5, y: 5, z: 5 },
-                        position: {  x: cardPosition, y: cardPosition, z: cardPosition },
+                        position: {  x: rightCardPosition, y: rightCardPosition, z: rightCardPosition },
                         rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
                     }
                 }
             }
         });
-            cardPosition += 0.1;
+            rightCardPosition += 0.1;
         }
+
+        if(leftHandArray !== undefined){
+            for(let card = 0; card < leftHandArray.length; card++){
+                Actor.CreateEmpty(this.context, {
+                    actor: {
+                        parentId: this.rootActor.id,
+                        name: 'Player Card Text Left',
+                        transform: {
+                            app: { position: { x: leftCardPositionX, y: leftCardPositionY, z: 0},
+                            rotation: Quaternion.FromEulerAngles(1200, -0, 0), }
+                        },
+                        text: {
+                            contents: `${leftHandArray[card].value}`,
+                            anchor: TextAnchorLocation.MiddleCenter,
+                            color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                            height: 0.3
+                        }
+                    }
+                });
+                // Load a glTF model
+                Actor.CreateFromGltf(this.context, {
+                // at the given URL
+                resourceUrl: `${this.baseUrl}/playingcard2.glb`,
+                // and spawn box colliders around the meshes.
+                colliderType: 'box',
+                // Also apply the following generic actor properties.
+                actor: {
+                    parentId: this.rootActor.id,
+                    name: 'Player Card Left',
+                    // Parent the glTF model to the text actor. 
+                    transform: {
+                        local: {
+                            scale: { x: 5, y: 5, z: 5 },
+                            position: {  x: leftCardPositionX, y: leftCardPositionY, z: leftCardPositionY },
+                            rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                        }
+                    }
+                }
+            });
+                leftCardPositionX -= 0.1;
+                leftCardPositionY += 0.1;
+            }
+        }
+  
     }
 
     private async createBlackJackDealer() {
@@ -485,8 +567,10 @@ export default class MREBlackjack {
         this.hitButton.enableAnimation('DoAFlip');
         game.dispatch(actions.hit("right"));
         // console.log(game.getState());
-        this.createDealerCards();
+        this.rootActor.destroy();
+        this.createRootActor();
         this.createPlayerCards();
+        this.createDealerCards();
         this.displayWinner();
         console.log(game.getState())
     });
@@ -509,8 +593,34 @@ export default class MREBlackjack {
 
     // When hit button is clicked trigger game dispatch to hit
         newRoundButtonBehavior.onClick(() => {
+            game.setState({stage: 'ready'});
             this.rootActor.destroy();
             this.createRootActor();
+    });
+
+       }
+
+       private splitAnimation() {
+
+        const splitButtonBehavior = this.splitButton.setBehavior(ButtonBehavior);
+        
+    // Trigger the grow/shrink animations on hover.
+        splitButtonBehavior.onHover('enter', () => {
+        this.splitButton.animateTo(
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+        splitButtonBehavior.onHover('exit', () => {
+        this.splitButton.animateTo(
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+
+    // When hit button is clicked trigger game dispatch to hit
+        splitButtonBehavior.onClick(() => {
+            game.dispatch(actions.split());
+            this.rootActor.destroy();
+            this.createRootActor();
+            this.createPlayerCards();
+            // console.log(game.getState());
     });
 
        }
@@ -538,10 +648,11 @@ export default class MREBlackjack {
 
             this.dealButton.enableAnimation('DoAFlip');
             game.dispatch(actions.deal());
-            this.createDealerCards();
             this.createPlayerCards();
+            this.createDealerCards();
             this.displayWinner();
-            console.log(game.getState())
+            // console.log(game.getState())
+            console.log(game.getState().handInfo.right.availableActions);
         });
        }
 
@@ -572,7 +683,7 @@ export default class MREBlackjack {
             this.createDealerCards();
             this.createPlayerCards();
             this.displayWinner();
-            console.log(game.getState())
+            // console.log(game.getState())
         });
 
        }
