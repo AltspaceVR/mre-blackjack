@@ -39,6 +39,20 @@ const Game = blackjack.Game;
 const game = new Game();
 
 /**
+ * Imports the BlackJack engine.
+ */
+
+const blackjack = require('engine-blackjack');
+const actions = blackjack.actions;
+const Game = blackjack.Game;
+
+/**
+ * Instantiates a game of Blackjack, the game's state starts at READY. The  game's state will change based on actions.
+ */
+
+const game = new Game();
+
+/**
  * The main class of this app. All the logic goes here.
  */
 
