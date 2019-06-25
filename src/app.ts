@@ -57,6 +57,17 @@ export default class MREBlackjack {
     private newRoundButton: Actor;
     private splitLabel: Actor;
     private splitButton: Actor;
+    private handMenuLabel: Actor;
+    private handMenu: Actor;
+    private hitRightLabel: Actor;
+    private hitRightButton: Actor;
+    private hitLeftLabel: Actor;
+    private hitLeftButton: Actor;
+    private stayRightLabel: Actor;
+    private stayRightButton: Actor;
+    private stayLeftLabel: Actor;
+    private stayLeftButton: Actor;
+
     private desk: Actor;
     private blackjackDealer: Actor;
 
@@ -79,6 +90,7 @@ export default class MREBlackjack {
             this.createRootActor(),
             this.createNewRoundButton(),
             this.createSplitButton(),
+            this.createHandMenuHit(),
 
         ]).catch(() => {
                 console.log('Hello there');
@@ -163,7 +175,7 @@ export default class MREBlackjack {
                     // Positions the text
                     app: { position: { x: 0.5, y: 0, z: 0 } }
                 },
-                // Here we're configuring the properties of the displayed text.
+               // Here we're configuring the properties of the displayed text.
                 text: {
                     contents: "Hit",
                     anchor: TextAnchorLocation.MiddleCenter,
@@ -195,6 +207,50 @@ export default class MREBlackjack {
             }
         });
         this.hitButton = hitButtonPromise.value;
+
+    }
+
+    private async createHandMenuHit() {
+        const handMenuLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                parentId: this.rootActor.id,
+                name: 'Text',
+                transform: {
+                    // Positions the text
+                    app: { position: { x: 0, y: 1, z: 0 } }
+                },
+               // Here we're configuring the properties of the displayed text.
+                text: {
+                    contents: "This is the hand menu",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        // Assigns the currently null Actor to the promise value
+        this.handMenuLabel = handMenuLabelPromise.value;
+
+        const handMenuPromise = Actor.CreateFromGltf(this.context, {
+            // assigning the actor an art asset
+            resourceUrl: `${this.baseUrl}/blank-card.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Hand Menu Button',
+                // Parent the glTF model to the text actor.
+                parentId: this.handMenuLabel.id,
+                transform: {
+                    local: {
+                        scale: { x: 3, y: 3, z: 0.5 },
+                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.handMenu = handMenuPromise.value;
 
     }
 
