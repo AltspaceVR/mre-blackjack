@@ -19,6 +19,8 @@ import {
     Plane,
     Sound,
     Asset,
+    Material,
+    AssetManager,
 } from '@microsoft/mixed-reality-extension-sdk';
 import { platform } from 'os';
 import { ENGINE_METHOD_ALL } from 'constants';
@@ -68,8 +70,13 @@ export default class MREBlackjack {
     private stayLeftLabel: Actor;
     private stayLeftButton: Actor;
 
+
+
     private desk: Actor;
     private blackjackDealer: Actor;
+
+    private rightHandArray: Array<ForwardPromise<Actor>> = [];
+    private leftHandArray: Array<ForwardPromise<Actor>> = [];
 
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
@@ -90,18 +97,22 @@ export default class MREBlackjack {
             this.createRootActor(),
             this.createNewRoundButton(),
             this.createSplitButton(),
-            this.createHandMenuHit(),
+            // this.createHandMenuHit(),
 
         ]).catch(() => {
                 console.log('Hello there');
         });
 
         this.hitAnimation();
+        if(game.getState().handInfo.left.cards != undefined){
+        this.hitRightAnimation();
+        this.hitLeftAnimation();
+        }
+        
         this.dealAnimation();
         this.stayAnimation();
         this.newRoundAnimation();
         this.splitAnimation();
-
     }
 
     private displayWinner() {
@@ -221,7 +232,7 @@ export default class MREBlackjack {
                 },
                // Here we're configuring the properties of the displayed text.
                 text: {
-                    contents: "This is the hand menu",
+                    contents: "Select which hand to hit",
                     anchor: TextAnchorLocation.MiddleCenter,
                     color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
                     height: 0.1,
@@ -251,6 +262,87 @@ export default class MREBlackjack {
             }
         });
         this.handMenu = handMenuPromise.value;
+
+        const hitRightLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                parentId: this.rootActor.id,
+                name: 'Text',
+                transform: {
+                    // Positions the text
+                    app: { position: { x: 0.3, y: 0.65, z: 0 } }
+                },
+               // Here we're configuring the properties of the displayed text.
+                text: {
+                    contents: "Right",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        this.hitRightLabel = hitRightLabelPromise.value;
+
+        const hitRightButtonPromise = Actor.CreateFromGltf(this.context, {
+            // assigning the actor an art asset
+            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Hand Menu Button',
+                // Parent the glTF model to the text actor.
+                parentId: this.hitRightLabel.id,
+                transform: {
+                    local: {
+                        scale: { x: 0.01, y: 0.01, z: 0.01 },
+                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.hitRightButton = hitRightButtonPromise.value;
+
+        const hitLeftLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                parentId: this.rootActor.id,
+                name: 'Text',
+                transform: {
+                    // Positions the text
+                    app: { position: { x: -0.2, y: 0.65, z: 0 } }
+                },
+               // Here we're configuring the properties of the displayed text.
+                text: {
+                    contents: "Left",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        this.hitLeftLabel = hitLeftLabelPromise.value;
+
+        const hitLeftButtonPromise = Actor.CreateFromGltf(this.context, {
+            // assigning the actor an art asset
+            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Hand Menu Button',
+                // Parent the glTF model to the text actor.
+                parentId: this.hitLeftLabel.id,
+                transform: {
+                    local: {
+                        scale: { x: 0.01, y: 0.01, z: 0.01 },
+                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+    
+    this.hitLeftButton = hitLeftButtonPromise.value;
 
     }
 
@@ -490,7 +582,7 @@ export default class MREBlackjack {
                 }
             });
             // Load a glTF model
-            Actor.CreateFromGltf(this.context, {
+           let rightPlayerCard =  Actor.CreateFromGltf(this.context, {
             // at the given URL
             resourceUrl: `${this.baseUrl}/playingcard2.glb`,
             // and spawn box colliders around the meshes.
@@ -506,10 +598,11 @@ export default class MREBlackjack {
                         position: {  x: rightCardPosition, y: rightCardPosition, z: rightCardPosition },
                         rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
                     }
-                }
+                },
             }
         });
             rightCardPosition += 0.1;
+            this.rightHandArray.push(rightPlayerCard);
         }
 
         if(leftHandArray !== undefined){
@@ -531,7 +624,7 @@ export default class MREBlackjack {
                     }
                 });
                 // Load a glTF model
-                Actor.CreateFromGltf(this.context, {
+                let leftPlayerCard = Actor.CreateFromGltf(this.context, {
                 // at the given URL
                 resourceUrl: `${this.baseUrl}/playingcard2.glb`,
                 // and spawn box colliders around the meshes.
@@ -552,6 +645,7 @@ export default class MREBlackjack {
             });
                 leftCardPositionX -= 0.1;
                 leftCardPositionY += 0.1;
+                this.leftHandArray.push(leftPlayerCard);
             }
         }
   
@@ -619,8 +713,15 @@ export default class MREBlackjack {
     });
 
     // When hit button is clicked trigger game dispatch to hit
+
+   
         hitButtonBehavior.onClick(() => {
-        this.hitButton.enableAnimation('DoAFlip');
+            if(game.getState().handInfo.left.cards != undefined){
+                this.createHandMenuHit();
+                this.hitRightAnimation();
+                this.hitLeftAnimation();
+            }else{
+                this.hitButton.enableAnimation('DoAFlip');
         game.dispatch(actions.hit("right"));
         // console.log(game.getState());
         this.rootActor.destroy();
@@ -628,7 +729,69 @@ export default class MREBlackjack {
         this.createPlayerCards();
         this.createDealerCards();
         this.displayWinner();
+        console.log(game.getState().stage)
+            }
+        
+    });
+
+       }
+
+       private hitRightAnimation() {
+
+        const hitRightButtonBehavior = this.hitRightButton.setBehavior(ButtonBehavior);
+        this.hitRightButton.enableAnimation('Spin');
+    // Trigger the grow/shrink animations on hover.
+        hitRightButtonBehavior.onHover('enter', () => {
+        this.hitRightButton.animateTo(
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.01 } } } }, 0.02, AnimationEaseCurves.EaseOutSine);
+    });
+        hitRightButtonBehavior.onHover('exit', () => {
+        this.hitRightButton.animateTo(
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+
+    // When hit button is clicked trigger game dispatch to hit
+        hitRightButtonBehavior.onClick(() => {
+        this.hitRightButton.enableAnimation('DoAFlip');
+        game.dispatch(actions.hit("right"));
+       
+        this.rootActor.destroy();
+        this.createRootActor();
+        this.createPlayerCards();
+        this.createDealerCards();
+        this.displayWinner();
         console.log(game.getState())
+    });
+
+       }
+
+       private hitLeftAnimation() {
+
+        const hitleftButtonBehavior = this.hitLeftButton.setBehavior(ButtonBehavior);
+        this.hitLeftButton.enableAnimation('Spin');
+    // Trigger the grow/shrink animations on hover.
+        hitleftButtonBehavior.onHover('enter', () => {
+        this.hitLeftButton.animateTo(
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+        hitleftButtonBehavior.onHover('exit', () => {
+        this.hitLeftButton.animateTo(
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+
+    // When hit button is clicked trigger game dispatch to hit
+        hitleftButtonBehavior.onClick(() => {
+        this.hitLeftButton.enableAnimation('DoAFlip');
+        game.dispatch(actions.hit({position : "left"}));
+        
+       
+        this.rootActor.destroy();
+        this.createRootActor();
+        this.createPlayerCards();
+        this.createDealerCards();
+        this.displayWinner();
+        console.log(game.getState())
+        console.log(game.getState().handInfo.left.cards.length)
     });
 
        }
@@ -709,6 +872,7 @@ export default class MREBlackjack {
             this.displayWinner();
             // console.log(game.getState())
             console.log(game.getState().handInfo.right.availableActions);
+            console.log(this.rightHandArray);
         });
        }
 
