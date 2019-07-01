@@ -13,8 +13,19 @@ import {
     PrimitiveShape,
     Quaternion,
     TextAnchorLocation,
-    Vector3
+    Vector3,
+    RigidBody,
+    ForwardPromise,
+    Plane,
+    Sound,
+    Asset,
+    Material,
+    AssetManager,
 } from '@microsoft/mixed-reality-extension-sdk';
+import { platform } from 'os';
+import { ENGINE_METHOD_ALL } from 'constants';
+
+
 
 /**
  * Imports the BlackJack engine.
@@ -30,19 +41,30 @@ const Game = blackjack.Game;
 
 const game = new Game();
 
+// game.setState({rules: {insurance: false}});
+
 /**
  * The main class of this app. All the logic goes here.
  */
 
 export default class MREBlackjack {
-    private hitLabel: Actor = null;
-    private dealLabel: Actor = null;
-    private hitButton: Actor = null;
-    private dealButton: Actor = null;
-    private desk: Actor = null;
-    private dealer: Actor = null;
+    private rootActor: Actor;
+    private hitLabel: Actor;
+    private hitButton: Actor;
+    private dealLabel: Actor;
+    private dealButton: Actor;
+    private stayLabel: Actor;
+    private stayButton: Actor;
+    private newRoundLabel: Actor;
+    private newRoundButton: Actor;
+    private splitLabel: Actor;
+    private splitButton: Actor;
 
-    private dealerCards: object = {};
+    private desk: Actor;
+    private blackjackDealer: Actor;
+
+    private rightHandArray: Array<ForwardPromise<Actor>> = [];
+    private leftHandArray: Array<ForwardPromise<Actor>> = [];
 
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
@@ -52,62 +74,123 @@ export default class MREBlackjack {
      * Once the context is "started", initialize the app.
      */
     private async started() {
-        // Create a new actor with no mesh, but some text. This operation is asynchronous, so
-        // it returns a "forward" promise (a special promise, as we'll see later).
+            // Call the functions with forwarded promises here
+        await Promise.all([
+
+            this.createDealButton(),
+            this.createHitButton(),
+            this.createStayButton(),
+            this.createDesk(),
+            this.createBlackJackDealer(),
+            this.createRootActor(),
+            this.createNewRoundButton(),
+            this.createSplitButton(),
+            this.createDeckIndicator(),
+            // this.createHandMenuHit(),
+
+        ]).catch(() => {
+                console.log('Hello there');
+        });
+
+        this.hitAnimation();
+        if(game.getState().handInfo.left.cards != undefined){
+        this.hitRightAnimation();
+        this.hitLeftAnimation();
+        }
+        
+        this.dealAnimation();
+        this.stayAnimation();
+        this.newRoundAnimation();
+        this.splitAnimation();
+    }
+
+    private displayWinner() {
+
+            if (game.getState().stage === 'done'){
+                    // tslint:disable-next-line: max-line-length
+                if (game.getState().dealerHasBlackjack || game.getState().handInfo.right.playerHasBusted === true || game.getState().handInfo.right.playerValue.hi < game.getState().dealerValue.hi && game.getState().dealerHasBusted !== true){
+
+                    Actor.CreateEmpty(this.context, {
+                        actor: {
+                            parentId: this.rootActor.id,
+                            name: 'dealer win',
+                            transform: {
+                                // Positions the text
+                                app: { position: { x: 0.5, y: 1, z: 0 } }
+                            },
+                            // Here we're configuring the properties of the displayed text.
+                            text: {
+                                contents: "Dealer Wins! :C",
+                                anchor: TextAnchorLocation.MiddleCenter,
+                                color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                                height: 0.1,
+                            }
+                        }
+                    });
+                    // game.setState({stage: 'ready'});
+
+// tslint:disable-next-line: max-line-length
+                } else if (game.getState().handInfo.right.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.right.playerValue.hi > game.getState().dealerValue.hi ){
+                    Actor.CreateEmpty(this.context, {
+                        actor: {
+                            parentId: this.rootActor.id,
+                            name: 'player win',
+                            transform: {
+                                // Positions the text
+                                app: { position: { x: 0.5, y: 1, z: 0 } }
+                            },
+                            // Here we're configuring the properties of the displayed text.
+                            text: {
+                                contents: "You Win! :D",
+                                anchor: TextAnchorLocation.MiddleCenter,
+                                color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                                height: 0.1,
+                            }
+                        }
+                    });
+                    // game.setState({stage: 'ready'});
+                }
+            }
+    }
+
+    private createRootActor() {
+
+        const rootActorPromise = Actor.CreateEmpty(this.context, {
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Root Actor',
+                // Parent the glTF model to the text actor.
+            }
+        });
+        this.rootActor = rootActorPromise.value;
+
+
+
+    }
+    private async createHitButton() {
         const hitLabelPromise = Actor.CreateEmpty(this.context, {
             actor: {
                 name: 'Text',
                 transform: {
-                    app: { position: { x: 0, y: 0.5, z: 0 } }
+                    // Positions the text
+                    app: { position: { x: 0.5, y: 0, z: 0 } }
                 },
+               // Here we're configuring the properties of the displayed text.
                 text: {
                     contents: "Hit",
                     anchor: TextAnchorLocation.MiddleCenter,
                     color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.3
+                    height: 0.1,
                 }
             }
         });
 
-        const dealerPromise = Actor.CreateEmpty(this.context, {
-            actor: {
-                name: 'Text',
-                transform: {
-                    app: { position: { x: 0, y: -3, z: 1} }
-                },
-                text: {
-                    contents: `Dealer Cards: ${this.dealerCards[0]}`,
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.3
-                }
-            }
-        });
-
-        const dealLabelPromise = Actor.CreateEmpty(this.context, {
-            actor: {
-                name: 'Text',
-                transform: {
-                    app: { position: { x: 2, y: 0.5, z: 0 } }
-                },
-                text: {
-                    contents: "Deal",
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.3
-                }
-            }
-        });
-
-        // Even though the actor is not yet created in Altspace (because we didn't wait for the promise),
-        // we can still get a reference to it by grabbing the `value` field from the forward promise.
+        // Assigns the currently null Actor to the promise value
         this.hitLabel = hitLabelPromise.value;
-        this.dealLabel = dealLabelPromise.value;
 
-        // Load a glTF model
-        const hitButtonPromise = Actor.CreateFromGLTF(this.context, {
-            // at the given URL
-            resourceUrl: `${this.baseUrl}/altspace-cube.glb`,
+        const hitButtonPromise = Actor.CreateFromGltf(this.context, {
+            // assigning the actor an art asset
+            resourceUrl: `${this.baseUrl}/card-button.glb`,
             // and spawn box colliders around the meshes.
             colliderType: 'box',
             // Also apply the following generic actor properties.
@@ -117,33 +200,402 @@ export default class MREBlackjack {
                 parentId: this.hitLabel.id,
                 transform: {
                     local: {
-                        position: { x: 0, y: -1, z: 0 },
-                        scale: { x: 0.4, y: 0.4, z: 0.4 }
+                        scale: { x: 0.01, y: 0.01, z: 0.02 },
+                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                     }
                 }
             }
         });
+        this.hitButton = hitButtonPromise.value;
 
-        const dealButtonPromise = Actor.CreateFromGLTF(this.context, {
-            // at the given URL
-            resourceUrl: `${this.baseUrl}/altspace-cube.glb`,
+    }
+
+    private async createStayButton() {
+        const stayLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'Text',
+                transform: {
+                    // Positions the text
+                    app: { position: { x: 1, y: 0, z: 0.4 } }
+                },
+                // Here we're configuring the properties of the displayed text.
+                text: {
+                    contents: "Stay",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        // Assigns the currently null Actor to the promise value
+        this.stayLabel = stayLabelPromise.value;
+
+        const stayButtonPromise = Actor.CreateFromGltf(this.context, {
+            // assigning the actor an art asset
+            resourceUrl: `${this.baseUrl}/card-button.glb`,
             // and spawn box colliders around the meshes.
             colliderType: 'box',
             // Also apply the following generic actor properties.
             actor: {
-                name: 'Deal Button',
+                name: 'Stay Button',
                 // Parent the glTF model to the text actor.
-                parentId: this.dealLabel.id,
+                parentId: this.stayLabel.id,
                 transform: {
                     local: {
-                        position: { x: 0, y: -1, z: 0 },
-                        scale: { x: 0.4, y: 0.4, z: 0.4 },
+                        scale: { x: 0.015, y: 0.015, z: 0.01 },
+                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                     }
                 }
             }
         });
+        this.stayButton = stayButtonPromise.value;
 
-        const deskPromise = Actor.CreateFromGLTF(this.context, {
+    }
+
+    private async createDealButton() {
+
+        const dealLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'Text',
+                transform: {
+                    app: { position: { x: 0.5, y: 0, z: 1 } }
+                },
+                text: {
+                    contents: "Deal",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        this.dealLabel = dealLabelPromise.value;
+
+        // Load a glTF model
+        const dealButtonPromise = Actor.CreateFromGltf(this.context, {
+        // at the given URL
+        resourceUrl: `${this.baseUrl}/card-button.glb`,
+        // and spawn box colliders around the meshes.
+        colliderType: 'box',
+        // Also apply the following generic actor properties.
+        actor: {
+            name: 'Deal Button',
+            // Parent the glTF model to the text actor.
+            parentId: this.dealLabel.id,
+            transform: {
+                local: {
+                    scale: { x: 0.01, y: 0.01, z: 0.02 },
+                    rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                }
+            }
+        }
+    });
+
+        this.dealButton = dealButtonPromise.value;
+    }
+
+    private async createNewRoundButton() {
+
+        const newRoundLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'Text',
+                transform: {
+                    app: { position: { x: 1, y: 0, z: 1 } }
+                },
+                text: {
+                    contents: "New Round",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        this.newRoundLabel = newRoundLabelPromise.value;
+
+        // Load a glTF model
+        const newRoundButtonPromise = Actor.CreateFromGltf(this.context, {
+        // at the given URL
+        resourceUrl: `${this.baseUrl}/card-button.glb`,
+        // and spawn box colliders around the meshes.
+        colliderType: 'box',
+        // Also apply the following generic actor properties.
+        actor: {
+            name: 'New Round',
+            // Parent the glTF model to the text actor.
+            parentId: this.newRoundLabel.id,
+            transform: {
+                local: {
+                    scale: { x: 0.01, y: 0.01, z: 0.02 },
+                    rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                }
+            }
+        }
+    });
+
+        this.newRoundButton = newRoundButtonPromise.value;
+    }
+
+    private async createDealerCards() {
+        const handArray = game.getState().dealerCards;
+        let cardPosition = 0;
+
+        for(let cards = 0; cards < handArray.length; cards++){
+
+            Actor.CreateEmpty(this.context, {
+                actor: {
+                    parentId: this.rootActor.id,
+                    name: 'Dealer Card Text',
+                    transform: {
+                        app: { position: { x: cardPosition, y: 0, z: 1},
+                        rotation: Quaternion.FromEulerAngles(1200, -0, 0), }
+                    },
+                    text: {
+                        contents: `${handArray[cards].value}`,
+                        anchor: TextAnchorLocation.MiddleCenter,
+                        color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                        height: 0.3
+                    }
+                }
+            });
+
+            Actor.CreateFromGltf(this.context, {
+            resourceUrl: `${this.baseUrl}/playingcard2.glb`,
+            actor: {
+                parentId: this.rootActor.id,
+                name: 'Dealer Card',
+                transform: {
+                    local: {
+                        scale: { x: 5, y: 5, z: 5 },
+                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                        position: {x: cardPosition , y: 0, z: 1}
+                    }
+                }
+            }
+        });
+            cardPosition -= 0.4;
+        }
+    }
+
+    private async createSplitButton() {
+        const splitLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'Text',
+                transform: {
+                    // Positions the text
+                    app: { position: { x: 0.5, y: 0, z: 0.4 } }
+                },
+                // Here we're configuring the properties of the displayed text.
+                text: {
+                    contents: "Split",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        // Assigns the currently null Actor to the promise value
+        this.splitLabel = splitLabelPromise.value;
+
+        const splitButtonPromise = Actor.CreateFromGltf(this.context, {
+            // assigning the actor an art asset
+            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Hit Button',
+                // Parent the glTF model to the text actor.
+                parentId: this.splitLabel.id,
+                transform: {
+                    local: {
+                        scale: { x: 0.01, y: 0.01, z: 0.02 },
+                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.splitButton = splitButtonPromise.value;
+
+    }
+
+    private async createPlayerCards() {
+        const rightHandArray = game.getState().handInfo.right.cards;
+        const leftHandArray = game.getState().handInfo.left.cards;
+        let rightCardPosition = 0;
+        let leftCardPositionX = -0.5;
+        let leftCardPositionY = 0;
+
+        
+
+        for(let card = 0; card < rightHandArray.length; card++){
+            Actor.CreateEmpty(this.context, {
+                actor: {
+                    parentId: this.rootActor.id,
+                    name: 'Player Card Text Right',
+                    transform: {
+                        app: { position: { x: rightCardPosition, y: rightCardPosition, z: 0},
+                        rotation: Quaternion.FromEulerAngles(1200, -0, 0), }
+                    },
+                    text: {
+                        contents: `${rightHandArray[card].value}`,
+                        anchor: TextAnchorLocation.MiddleCenter,
+                        color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                        height: 0.3
+                    }
+                }
+            });
+            // Load a glTF model
+           let rightPlayerCard =  Actor.CreateFromGltf(this.context, {
+            // at the given URL
+            resourceUrl: `${this.baseUrl}/playingcard2.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                parentId: this.rootActor.id,
+                name: 'Player Card Right',
+                // Parent the glTF model to the text actor. 
+                transform: {
+                    local: {
+                        scale: { x: 5, y: 5, z: 5 },
+                        position: {  x: rightCardPosition, y: rightCardPosition, z: rightCardPosition },
+                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                    }
+                },
+            }
+        });
+            rightCardPosition += 0.1;
+            this.rightHandArray.push(rightPlayerCard);
+        }
+
+        if(leftHandArray !== undefined){
+            for(let card = 0; card < leftHandArray.length; card++){
+                Actor.CreateEmpty(this.context, {
+                    actor: {
+                        parentId: this.rootActor.id,
+                        name: 'Player Card Text Left',
+                        transform: {
+                            app: { position: { x: leftCardPositionX, y: leftCardPositionY, z: 0},
+                            rotation: Quaternion.FromEulerAngles(1200, -0, 0), }
+                        },
+                        text: {
+                            contents: `${leftHandArray[card].value}`,
+                            anchor: TextAnchorLocation.MiddleCenter,
+                            color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                            height: 0.3
+                        }
+                    }
+                });
+                // Load a glTF model
+                let leftPlayerCard = Actor.CreateFromGltf(this.context, {
+                // at the given URL
+                resourceUrl: `${this.baseUrl}/playingcard2.glb`,
+                // and spawn box colliders around the meshes.
+                colliderType: 'box',
+                // Also apply the following generic actor properties.
+                actor: {
+                    parentId: this.rootActor.id,
+                    name: 'Player Card Left',
+                    // Parent the glTF model to the text actor. 
+                    transform: {
+                        local: {
+                            scale: { x: 5, y: 5, z: 5 },
+                            position: {  x: leftCardPositionX, y: leftCardPositionY, z: leftCardPositionY },
+                            rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                        }
+                    }
+                }
+            });
+                leftCardPositionX -= 0.1;
+                leftCardPositionY += 0.1;
+                this.leftHandArray.push(leftPlayerCard);
+            }
+        }
+        
+        this.createDeckIndicator();
+    }
+
+
+    private async createDeckIndicator() {
+
+        if(game.getState().stage === 'player-turn-right'){
+            Actor.CreateFromGltf(this.context, {
+                // at the given URL
+                resourceUrl: `${this.baseUrl}/red-arrow.glb`,
+                // and spawn box colliders around the meshes.
+                colliderType: 'box',
+                // Also apply the following generic actor properties.
+                actor: {
+                    parentId: this.rootActor.id,
+                    name: 'Red Arrow',
+                    // Parent the glTF model to the text actor.
+                    transform: {
+                        local: {
+                            position: {x: this.rightHandArray[0].value.transform.app.position.x + 0.1, y: 0.5, z: this.rightHandArray[0].value.transform.app.position.z},
+                            scale: { x: 1, y: 1, z: 1 },
+                            rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
+                        }
+                    }
+                }
+            });
+        }else if(game.getState().stage === 'player-turn-left'){
+
+            Actor.CreateFromGltf(this.context, {
+                // at the given URL
+                resourceUrl: `${this.baseUrl}/red-arrow.glb`,
+                // and spawn box colliders around the meshes.
+                colliderType: 'box',
+                // Also apply the following generic actor properties.
+                actor: {
+                    parentId: this.rootActor.id,
+                    name: 'Red Arrow',
+                    // Parent the glTF model to the text actor.
+                    transform: {
+                        local: {
+                            position: {x: this.leftHandArray[0].value.transform.app.position.x - 0.1, y: 0.5, z: this.leftHandArray[0].value.transform.app.position.z},
+                            scale: { x: 1, y: 1, z: 1 },
+                            rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
+                        }
+                    }
+                }
+            });
+
+
+        }
+    
+        
+
+    }
+    private async createBlackJackDealer() {
+
+        const blackjackDealerPromise = Actor.CreateFromGltf(this.context, {
+            // at the given URL
+            resourceUrl: `${this.baseUrl}/phil.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Phil',
+                // Parent the glTF model to the text actor.
+                transform: {
+                    local: {
+                        position: { x: 0, y: -0.5, z: 3.1 },
+                        scale: { x: .3, y: .3, z: .3 },
+                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.blackjackDealer = blackjackDealerPromise.value;
+
+    }
+
+    private async createDesk() {
+
+        const deskPromise = Actor.CreateFromGltf(this.context, {
             // at the given URL
             resourceUrl: `${this.baseUrl}/blackjack-table.glb`,
             // and spawn box colliders around the meshes.
@@ -152,7 +604,6 @@ export default class MREBlackjack {
             actor: {
                 name: 'Desk',
                 // Parent the glTF model to the text actor.
-                parentId: this.dealLabel.id,
                 transform: {
                     local: {
                         position: { x: 0, y: -3, z: 1 },
@@ -162,58 +613,220 @@ export default class MREBlackjack {
                 }
             }
         });
-
-        // Grab that early reference again.
-        this.hitButton = hitButtonPromise.value;
-        this.dealButton = dealButtonPromise.value;
         this.desk = deskPromise.value;
 
-        // Now that the text and its animation are all being set up, we can start playing
-        // the animation.
+    }
+       private hitAnimation() {
+
+        const hitButtonBehavior = this.hitButton.setBehavior(ButtonBehavior);
         this.hitLabel.enableAnimation('Spin');
+    // Trigger the grow/shrink animations on hover.
+        hitButtonBehavior.onHover('enter', () => {
+        this.hitButton.animateTo(
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+        hitButtonBehavior.onHover('exit', () => {
+        this.hitButton.animateTo(
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+
+    // When hit button is clicked trigger game dispatch to hit
+
+   
+        hitButtonBehavior.onClick(() => {
+            if(game.getState().stage === 'player-turn-right'){
+                this.hitButton.enableAnimation('DoAFlip');
+                game.dispatch(actions.hit("right"));
+                this.rootActor.destroy();
+                this.createRootActor();
+                this.createPlayerCards();
+                this.createDealerCards();
+                this.displayWinner();
+            }else if (game.getState().stage === 'player-turn-left'){
+                this.hitButton.enableAnimation('DoAFlip');
+                game.dispatch(actions.hit({ position : 'left' }));
+                this.rootActor.destroy();
+                this.createRootActor();
+                this.createPlayerCards();
+                this.createDealerCards();
+                this.displayWinner();
+                console.log(game.getState().handInfo.left.cards.length)
+
+            }
+    });
+
+       }
+
+       private hitRightAnimation() {
+
+        const hitRightButtonBehavior = this.hitRightButton.setBehavior(ButtonBehavior);
+        this.hitRightButton.enableAnimation('Spin');
+    // Trigger the grow/shrink animations on hover.
+        hitRightButtonBehavior.onHover('enter', () => {
+        this.hitRightButton.animateTo(
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.01 } } } }, 0.02, AnimationEaseCurves.EaseOutSine);
+    });
+        hitRightButtonBehavior.onHover('exit', () => {
+        this.hitRightButton.animateTo(
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+
+    // When hit button is clicked trigger game dispatch to hit
+        hitRightButtonBehavior.onClick(() => {
+        this.hitRightButton.enableAnimation('DoAFlip');
+        game.dispatch(actions.hit("right"));
+       
+        this.rootActor.destroy();
+        this.createRootActor();
+        this.createPlayerCards();
+        this.createDealerCards();
+        this.displayWinner();
+        console.log(game.getState())
+    });
+
+       }
+
+       private hitLeftAnimation() {
+
+        const hitleftButtonBehavior = this.hitLeftButton.setBehavior(ButtonBehavior);
+        this.hitLeftButton.enableAnimation('Spin');
+    // Trigger the grow/shrink animations on hover.
+        hitleftButtonBehavior.onHover('enter', () => {
+        this.hitLeftButton.animateTo(
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+        hitleftButtonBehavior.onHover('exit', () => {
+        this.hitLeftButton.animateTo(
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+
+    // When hit button is clicked trigger game dispatch to hit
+        hitleftButtonBehavior.onClick(() => {
+        this.hitLeftButton.enableAnimation('DoAFlip');
+        game.dispatch(actions.hit({position : "left"}));
+        
+       
+        this.rootActor.destroy();
+        this.createRootActor();
+        this.createPlayerCards();
+        this.createDealerCards();
+        this.displayWinner();
+        console.log(game.getState())
+        console.log(game.getState().handInfo.left.cards.length)
+    });
+
+       }
+
+       private newRoundAnimation() {
+
+        const newRoundButtonBehavior = this.newRoundButton.setBehavior(ButtonBehavior);
+        
+    // Trigger the grow/shrink animations on hover.
+        newRoundButtonBehavior.onHover('enter', () => {
+        this.newRoundButton.animateTo(
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+        newRoundButtonBehavior.onHover('exit', () => {
+        this.newRoundButton.animateTo(
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+
+    // When hit button is clicked trigger game dispatch to hit
+        newRoundButtonBehavior.onClick(() => {
+            game.setState({stage: 'ready'});
+            this.rootActor.destroy();
+            this.createRootActor();
+    });
+
+       }
+
+       private splitAnimation() {
+
+        const splitButtonBehavior = this.splitButton.setBehavior(ButtonBehavior);
+        
+    // Trigger the grow/shrink animations on hover.
+        splitButtonBehavior.onHover('enter', () => {
+        this.splitButton.animateTo(
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+        splitButtonBehavior.onHover('exit', () => {
+        this.splitButton.animateTo(
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+
+    // When hit button is clicked trigger game dispatch to hit
+        splitButtonBehavior.onClick(() => {
+            game.dispatch(actions.split());
+            this.rootActor.destroy();
+            this.createRootActor();
+            this.createPlayerCards();
+            console.log(game.getState().stage);
+    });
+
+       }
+
+       private dealAnimation() {
         this.dealLabel.enableAnimation('Spin');
 
-        // Set up cursor interaction. We add the input behavior ButtonBehavior to the cube.
         // Button behaviors have two pairs of events: hover start/stop, and click start/stop.
-        const hitButtonBehavior = this.hitButton.setBehavior(ButtonBehavior);
+
         const dealbuttonBehavior = this.dealButton.setBehavior(ButtonBehavior);
-
-        // Trigger the grow/shrink animations on hover.
-        hitButtonBehavior.onHover('enter', () => {
-            this.hitButton.animateTo(
-                { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.3, AnimationEaseCurves.EaseOutSine);
-        });
-        hitButtonBehavior.onHover('exit', () => {
-            this.hitButton.animateTo(
-                { transform: { local: { scale: { x: 0.4, y: 0.4, z: 0.4 } } } }, 0.3, AnimationEaseCurves.EaseOutSine);
-        });
-
-        // When hit button is clicked trigger game dispatch to hit
-        hitButtonBehavior.onClick('pressed', () => {
-            this.hitButton.enableAnimation('DoAFlip');
-            game.dispatch(actions.hit("right"));
-            console.log(game.getState());
-
-        });
 
         dealbuttonBehavior.onHover('enter', () => {
             this.dealButton.animateTo(
-                { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.3, AnimationEaseCurves.EaseOutSine);
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
         });
         dealbuttonBehavior.onHover('exit', () => {
             this.dealButton.animateTo(
-                { transform: { local: { scale: { x: 0.4, y: 0.4, z: 0.4 } } } }, 0.3, AnimationEaseCurves.EaseOutSine);
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
         });
 
         // When deal button is clicked trigger deal action.
-        dealbuttonBehavior.onClick('pressed', () => {
+        dealbuttonBehavior.onClick(() => {
+
             this.dealButton.enableAnimation('DoAFlip');
             game.dispatch(actions.deal());
-            this.dealerCards.push(game.getState().dealerHoleCard);
-            console.log(game.getState());
-            console.log(this.dealerCards[0]);
+            this.createPlayerCards();
+            this.createDealerCards();
+            this.displayWinner();
+            // console.log(game.getState())
+            // console.log(game.getState().handInfo.right.availableActions);
+            // console.log(this.rightHandArray[0].value.transform.app.position.x);
+        });
+       }
+
+       private stayAnimation() {
+
+        this.stayLabel.enableAnimation('Spin');
+
+        // Button behaviors have two pairs of events: hover start/stop, and click start/stop.
+
+        const stayButtonBehavior = this.stayButton.setBehavior(ButtonBehavior);
+
+        stayButtonBehavior.onHover('enter', () => {
+            this.stayButton.animateTo(
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+        });
+        stayButtonBehavior.onHover('exit', () => {
+            this.stayButton.animateTo(
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
         });
 
-    }
+        // When deal button is clicked trigger deal action.
+        stayButtonBehavior.onClick(() => {
+
+            this.stayButton.enableAnimation('DoAFlip');
+            game.dispatch(actions.stand('right'));
+            this.createDealerCards();
+            this.createPlayerCards();
+            this.displayWinner();
+            // console.log(game.getState())
+        });
+
+       }
 
 }
