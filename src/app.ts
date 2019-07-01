@@ -97,6 +97,7 @@ export default class MREBlackjack {
             this.createRootActor(),
             this.createNewRoundButton(),
             this.createSplitButton(),
+            this.createDeckIndicator(),
             // this.createHandMenuHit(),
 
         ]).catch(() => {
@@ -564,6 +565,8 @@ export default class MREBlackjack {
         let leftCardPositionX = -0.5;
         let leftCardPositionY = 0;
 
+        
+
         for(let card = 0; card < rightHandArray.length; card++){
             Actor.CreateEmpty(this.context, {
                 actor: {
@@ -648,9 +651,61 @@ export default class MREBlackjack {
                 this.leftHandArray.push(leftPlayerCard);
             }
         }
-  
+        
+        this.createDeckIndicator();
     }
 
+
+    private async createDeckIndicator() {
+
+        if(game.getState().stage === 'player-turn-right'){
+            Actor.CreateFromGltf(this.context, {
+                // at the given URL
+                resourceUrl: `${this.baseUrl}/red-arrow.glb`,
+                // and spawn box colliders around the meshes.
+                colliderType: 'box',
+                // Also apply the following generic actor properties.
+                actor: {
+                    parentId: this.rootActor.id,
+                    name: 'Red Arrow',
+                    // Parent the glTF model to the text actor.
+                    transform: {
+                        local: {
+                            position: {x: this.rightHandArray[0].value.transform.app.position.x + 0.1, y: 0.5, z: this.rightHandArray[0].value.transform.app.position.z},
+                            scale: { x: 1, y: 1, z: 1 },
+                            rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
+                        }
+                    }
+                }
+            });
+        }else if(game.getState().stage === 'player-turn-left'){
+
+            Actor.CreateFromGltf(this.context, {
+                // at the given URL
+                resourceUrl: `${this.baseUrl}/red-arrow.glb`,
+                // and spawn box colliders around the meshes.
+                colliderType: 'box',
+                // Also apply the following generic actor properties.
+                actor: {
+                    parentId: this.rootActor.id,
+                    name: 'Red Arrow',
+                    // Parent the glTF model to the text actor.
+                    transform: {
+                        local: {
+                            position: {x: this.leftHandArray[0].value.transform.app.position.x - 0.1, y: 0.5, z: this.leftHandArray[0].value.transform.app.position.z},
+                            scale: { x: 1, y: 1, z: 1 },
+                            rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
+                        }
+                    }
+                }
+            });
+
+
+        }
+    
+        
+
+    }
     private async createBlackJackDealer() {
 
         const blackjackDealerPromise = Actor.CreateFromGltf(this.context, {
@@ -716,22 +771,24 @@ export default class MREBlackjack {
 
    
         hitButtonBehavior.onClick(() => {
-            if(game.getState().handInfo.left.cards != undefined){
-                this.createHandMenuHit();
-                this.hitRightAnimation();
-                this.hitLeftAnimation();
-            }else{
+            if(game.getState().stage === 'player-turn-right'){
                 this.hitButton.enableAnimation('DoAFlip');
-        game.dispatch(actions.hit("right"));
-        // console.log(game.getState());
-        this.rootActor.destroy();
-        this.createRootActor();
-        this.createPlayerCards();
-        this.createDealerCards();
-        this.displayWinner();
-        console.log(game.getState().stage)
+                game.dispatch(actions.hit("right"));
+                this.rootActor.destroy();
+                this.createRootActor();
+                this.createPlayerCards();
+                this.createDealerCards();
+                this.displayWinner();
+            }else if (game.getState().stage === 'player-turn-left'){
+                this.hitButton.enableAnimation('DoAFlip');
+                game.dispatch(actions.hit("left"));
+                this.rootActor.destroy();
+                this.createRootActor();
+                this.createPlayerCards();
+                this.createDealerCards();
+                this.displayWinner();
+
             }
-        
     });
 
        }
@@ -839,7 +896,7 @@ export default class MREBlackjack {
             this.rootActor.destroy();
             this.createRootActor();
             this.createPlayerCards();
-            // console.log(game.getState());
+            console.log(game.getState().stage);
     });
 
        }
@@ -871,8 +928,8 @@ export default class MREBlackjack {
             this.createDealerCards();
             this.displayWinner();
             // console.log(game.getState())
-            console.log(game.getState().handInfo.right.availableActions);
-            console.log(this.rightHandArray);
+            // console.log(game.getState().handInfo.right.availableActions);
+            // console.log(this.rightHandArray[0].value.transform.app.position.x);
         });
        }
 
