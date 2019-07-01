@@ -48,6 +48,8 @@ const game = new Game();
  */
 
 export default class MREBlackjack {
+// tslint:disable-next-line: max-line-length
+    // Here, we're creating null anctors. We'll set the values of the forwarded promises of the created GLTFs to these variables for reference.
     private rootActor: Actor;
     private hitLabel: Actor;
     private hitButton: Actor;
@@ -62,6 +64,8 @@ export default class MREBlackjack {
 
     private desk: Actor;
     private blackjackDealer: Actor;
+// tslint:disable-next-line: max-line-length
+    // Same concept as before only this time using an an array, we want to put the actors into an array so that it will be easier to add behaviors to all of the actors later.
 
     private rightHandArray: Array<ForwardPromise<Actor>> = [];
     private leftHandArray: Array<ForwardPromise<Actor>> = [];
@@ -72,6 +76,7 @@ export default class MREBlackjack {
 
     /**
      * Once the context is "started", initialize the app.
+     * This method will intialize the majority of the create actor methods as well as the animations and behaviors of said actors.
      */
     private async started() {
             // Call the functions with forwarded promises here
@@ -86,25 +91,22 @@ export default class MREBlackjack {
             this.createNewRoundButton(),
             this.createSplitButton(),
             this.createDeckIndicator(),
-            // this.createHandMenuHit(),
 
         ]).catch(() => {
                 console.log('Hello there');
         });
 
         this.hitAnimation();
-        if(game.getState().handInfo.left.cards != undefined){
-        this.hitRightAnimation();
-        this.hitLeftAnimation();
-        }
-        
         this.dealAnimation();
         this.stayAnimation();
         this.newRoundAnimation();
         this.splitAnimation();
     }
-
-    private displayWinner() {
+    /**
+     * This method will be called every time the Dealer DEALS or the User HITS or STANDS.
+     * It will check the the conditions for whether the Dealer or the User has won the round and then display the result.
+     */
+    private displayWinnerRight() {
 
             if (game.getState().stage === 'done'){
                     // tslint:disable-next-line: max-line-length
@@ -120,7 +122,7 @@ export default class MREBlackjack {
                             },
                             // Here we're configuring the properties of the displayed text.
                             text: {
-                                contents: "Dealer Wins! :C",
+                                contents: "right hand lost :C",
                                 anchor: TextAnchorLocation.MiddleCenter,
                                 color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
                                 height: 0.1,
@@ -141,7 +143,7 @@ export default class MREBlackjack {
                             },
                             // Here we're configuring the properties of the displayed text.
                             text: {
-                                contents: "You Win! :D",
+                                contents: "right hand wins :D ",
                                 anchor: TextAnchorLocation.MiddleCenter,
                                 color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
                                 height: 0.1,
@@ -153,6 +155,59 @@ export default class MREBlackjack {
             }
     }
 
+    private displayWinnerLeft() {
+
+        if (game.getState().stage === 'done'){
+                // tslint:disable-next-line: max-line-length
+            if (game.getState().dealerHasBlackjack || game.getState().handInfo.left.playerHasBusted === true || game.getState().handInfo.left.playerValue.hi < game.getState().dealerValue.hi && game.getState().dealerHasBusted !== true){
+
+                Actor.CreateEmpty(this.context, {
+                    actor: {
+                        parentId: this.rootActor.id,
+                        name: 'dealer win',
+                        transform: {
+                            // Positions the text
+                            app: { position: { x: -0.5, y: 1, z: 0 } }
+                        },
+                        // Here we're configuring the properties of the displayed text.
+                        text: {
+                            contents: "Left hand lost :c",
+                            anchor: TextAnchorLocation.MiddleCenter,
+                            color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                            height: 0.1,
+                        }
+                    }
+                });
+                // game.setState({stage: 'ready'});
+
+// tslint:disable-next-line: max-line-length
+            } else if (game.getState().handInfo.left.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.left.playerValue.hi > game.getState().dealerValue.hi ){
+                Actor.CreateEmpty(this.context, {
+                    actor: {
+                        parentId: this.rootActor.id,
+                        name: 'player win',
+                        transform: {
+                            // Positions the text
+                            app: { position: { x: -0.5, y: 1, z: 0 } }
+                        },
+                        // Here we're configuring the properties of the displayed text.
+                        text: {
+                            contents: "left hand won :D",
+                            anchor: TextAnchorLocation.MiddleCenter,
+                            color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                            height: 0.1,
+                        }
+                    }
+                });
+                // game.setState({stage: 'ready'});
+            }
+        }
+}
+    /**
+     * This method will create a blank Actor
+     * We want this guy so that we can delete multiple actors with ease.
+     * Set any actor you want mass deleted with the id of this actor.
+     */
     private createRootActor() {
 
         const rootActorPromise = Actor.CreateEmpty(this.context, {
@@ -518,7 +573,10 @@ export default class MREBlackjack {
         this.createDeckIndicator();
     }
 
-
+/**
+ * This method will create an indicator to show which hand you're playing with.
+ *  It's position depends entirely on the value of the first actor of either the rightHandArray or the leftHandArray 
+ */
     private async createDeckIndicator() {
 
         if(game.getState().stage === 'player-turn-right'){
@@ -641,7 +699,9 @@ export default class MREBlackjack {
                 this.createRootActor();
                 this.createPlayerCards();
                 this.createDealerCards();
-                this.displayWinner();
+                this.displayWinnerRight();
+                console.log(game.getState().wonOnRight)
+          
             }else if (game.getState().stage === 'player-turn-left'){
                 this.hitButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.hit({ position : 'left' }));
@@ -649,70 +709,10 @@ export default class MREBlackjack {
                 this.createRootActor();
                 this.createPlayerCards();
                 this.createDealerCards();
-                this.displayWinner();
-                console.log(game.getState().handInfo.left.cards.length)
-
+                this.displayWinnerRight();
+                this.displayWinnerLeft();
+                console.log(game.getState())
             }
-    });
-
-       }
-
-       private hitRightAnimation() {
-
-        const hitRightButtonBehavior = this.hitRightButton.setBehavior(ButtonBehavior);
-        this.hitRightButton.enableAnimation('Spin');
-    // Trigger the grow/shrink animations on hover.
-        hitRightButtonBehavior.onHover('enter', () => {
-        this.hitRightButton.animateTo(
-            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.01 } } } }, 0.02, AnimationEaseCurves.EaseOutSine);
-    });
-        hitRightButtonBehavior.onHover('exit', () => {
-        this.hitRightButton.animateTo(
-            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
-    });
-
-    // When hit button is clicked trigger game dispatch to hit
-        hitRightButtonBehavior.onClick(() => {
-        this.hitRightButton.enableAnimation('DoAFlip');
-        game.dispatch(actions.hit("right"));
-       
-        this.rootActor.destroy();
-        this.createRootActor();
-        this.createPlayerCards();
-        this.createDealerCards();
-        this.displayWinner();
-        console.log(game.getState())
-    });
-
-       }
-
-       private hitLeftAnimation() {
-
-        const hitleftButtonBehavior = this.hitLeftButton.setBehavior(ButtonBehavior);
-        this.hitLeftButton.enableAnimation('Spin');
-    // Trigger the grow/shrink animations on hover.
-        hitleftButtonBehavior.onHover('enter', () => {
-        this.hitLeftButton.animateTo(
-            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
-    });
-        hitleftButtonBehavior.onHover('exit', () => {
-        this.hitLeftButton.animateTo(
-            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
-    });
-
-    // When hit button is clicked trigger game dispatch to hit
-        hitleftButtonBehavior.onClick(() => {
-        this.hitLeftButton.enableAnimation('DoAFlip');
-        game.dispatch(actions.hit({position : "left"}));
-        
-       
-        this.rootActor.destroy();
-        this.createRootActor();
-        this.createPlayerCards();
-        this.createDealerCards();
-        this.displayWinner();
-        console.log(game.getState())
-        console.log(game.getState().handInfo.left.cards.length)
     });
 
        }
@@ -790,10 +790,7 @@ export default class MREBlackjack {
             game.dispatch(actions.deal());
             this.createPlayerCards();
             this.createDealerCards();
-            this.displayWinner();
-            // console.log(game.getState())
-            // console.log(game.getState().handInfo.right.availableActions);
-            // console.log(this.rightHandArray[0].value.transform.app.position.x);
+            this.displayWinnerRight();
         });
        }
 
@@ -819,12 +816,30 @@ export default class MREBlackjack {
         // When deal button is clicked trigger deal action.
         stayButtonBehavior.onClick(() => {
 
-            this.stayButton.enableAnimation('DoAFlip');
-            game.dispatch(actions.stand('right'));
-            this.createDealerCards();
-            this.createPlayerCards();
-            this.displayWinner();
-            // console.log(game.getState())
+
+            if(game.getState().stage === 'player-turn-right'){
+                this.stayButton.enableAnimation('DoAFlip');
+                game.dispatch(actions.stand('right'));
+                this.rootActor.destroy();
+                this.createRootActor();
+                this.createDealerCards();
+                this.createPlayerCards();
+                this.displayWinnerRight();
+                console.log(game.getState().wonOnRight)
+               
+            } else if (game.getState().stage === 'player-turn-left'){
+                this.stayButton.enableAnimation('DoAFlip');
+                game.dispatch(actions.stand({ position : 'left' }));
+                this.rootActor.destroy();
+                this.createRootActor();
+                this.createDealerCards();
+                this.createPlayerCards();
+                this.displayWinnerRight();
+                this.displayWinnerLeft();
+           
+            }
+          
+    
         });
 
        }
