@@ -41,6 +41,17 @@ const Game = blackjack.Game;
 
 const game = new Game();
 
+game.setState({rules:
+    { decks: 2,
+      standOnSoft17: true,
+      double: '9or10or11',
+      split: true,
+      doubleAfterSplit: true,
+      surrender: true,
+      insurance: false,
+      showdownAfterAceSplit: true }});
+
+
 // game.setState({rules: {insurance: false}});
 
 /**
@@ -70,6 +81,9 @@ export default class MREBlackjack {
     private rightHandArray: Array<ForwardPromise<Actor>> = [];
     private leftHandArray: Array<ForwardPromise<Actor>> = [];
 
+    private deck: Array<Object> = [];
+
+
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
     }
@@ -79,6 +93,9 @@ export default class MREBlackjack {
      * This method will intialize the majority of the create actor methods as well as the animations and behaviors of said actors.
      */
     private async started() {
+
+        this.deck = game.getState().deck;
+        console.log(this.deck.length)
             // Call the functions with forwarded promises here
         await Promise.all([
 
@@ -102,6 +119,26 @@ export default class MREBlackjack {
         this.newRoundAnimation();
         this.splitAnimation();
     }
+
+
+    private shuffle(array: any) {
+        var currentIndex = array.length, temporaryValue, randomIndex;
+      
+        // While there remain elements to shuffle...
+        while (0 !== currentIndex) {
+      
+          // Pick a remaining element...
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          currentIndex -= 1;
+      
+          // And swap it with the current element.
+          temporaryValue = array[currentIndex];
+          array[currentIndex] = array[randomIndex];
+          array[randomIndex] = temporaryValue;
+        }
+      
+        return array;
+      }
     /**
      * This method will be called every time the Dealer DEALS or the User HITS or STANDS.
      * It will check the the conditions for whether the Dealer or the User has won the round and then display the result.
@@ -786,11 +823,17 @@ export default class MREBlackjack {
         // When deal button is clicked trigger deal action.
         dealbuttonBehavior.onClick(() => {
 
+            if(game.getState().deck.length === 0){
+                
+                game.setState({deck: this.shuffle(this.deck)});
+            }
             this.dealButton.enableAnimation('DoAFlip');
             game.dispatch(actions.deal());
             this.createPlayerCards();
             this.createDealerCards();
-            this.displayWinnerRight();
+
+            console.log(game.getState().deck.length)
+
         });
        }
 
