@@ -70,6 +70,8 @@ export default class MREBlackjack {
     private stayButton: Actor;
     private newRoundLabel: Actor;
     private newRoundButton: Actor;
+    private doubleDownLabel: Actor;
+    private doubleDownButton: Actor;
     private splitLabel: Actor;
     private splitButton: Actor;
 
@@ -108,6 +110,7 @@ export default class MREBlackjack {
             this.createNewRoundButton(),
             this.createSplitButton(),
             this.createDeckIndicator(),
+            this.createDoubleDownButton(),
 
         ]).catch(() => {
                 console.log('Hello there');
@@ -118,6 +121,7 @@ export default class MREBlackjack {
         this.stayAnimation();
         this.newRoundAnimation();
         this.splitAnimation();
+        this.doubleDownAnimation();
     }
 
 
@@ -308,7 +312,7 @@ export default class MREBlackjack {
                 name: 'Text',
                 transform: {
                     // Positions the text
-                    app: { position: { x: 1, y: 0, z: 0.4 } }
+                    app: { position: { x: 1, y: 0, z: 0.6 } }
                 },
                 // Here we're configuring the properties of the displayed text.
                 text: {
@@ -342,6 +346,49 @@ export default class MREBlackjack {
             }
         });
         this.stayButton = stayButtonPromise.value;
+
+    }
+
+    private async createDoubleDownButton() {
+        const doubleDownLabelPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'Double Down Text',
+                transform: {
+                    // Positions the text
+                    app: { position: { x: 1, y: 0, z: 0.1 } }
+                },
+                // Here we're configuring the properties of the displayed text.
+                text: {
+                    contents: "Double Down",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+
+        // Assigns the currently null Actor to the promise value
+        this.doubleDownLabel = doubleDownLabelPromise.value;
+
+        const doubleDownButtonPromise = Actor.CreateFromGltf(this.context, {
+            // assigning the actor an art asset
+            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Stay Button',
+                // Parent the glTF model to the text actor.
+                parentId: this.doubleDownLabel.id,
+                transform: {
+                    local: {
+                        scale: { x: 0.015, y: 0.015, z: 0.01 },
+                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+        this.doubleDownButton = doubleDownButtonPromise.value;
 
     }
 
@@ -737,7 +784,7 @@ export default class MREBlackjack {
                 this.createPlayerCards();
                 this.createDealerCards();
                 this.displayWinnerRight();
-                console.log(game.getState().wonOnRight)
+                
           
             }else if (game.getState().stage === 'player-turn-left'){
                 this.hitButton.enableAnimation('DoAFlip');
@@ -748,7 +795,7 @@ export default class MREBlackjack {
                 this.createDealerCards();
                 this.displayWinnerRight();
                 this.displayWinnerLeft();
-                console.log(game.getState())
+                
             }
     });
 
@@ -797,10 +844,43 @@ export default class MREBlackjack {
             this.rootActor.destroy();
             this.createRootActor();
             this.createPlayerCards();
-            console.log(game.getState().stage);
+           
     });
 
        }
+
+       private doubleDownAnimation() {
+
+        const doubleDownButtonBehavior = this.doubleDownButton.setBehavior(ButtonBehavior);
+        
+    // Trigger the grow/shrink animations on hover.
+        doubleDownButtonBehavior.onHover('enter', () => {
+        this.doubleDownButton.animateTo(
+            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+        doubleDownButtonBehavior.onHover('exit', () => {
+        this.doubleDownButton.animateTo(
+            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+    });
+
+    // When hit button is clicked trigger game dispatch to hit
+        doubleDownButtonBehavior.onClick(() => {
+            if(game.getState().stage === 'player-turn-right'){
+                this.hitButton.enableAnimation('DoAFlip');
+                game.dispatch(actions.double("right"));
+                
+          
+            }else if (game.getState().stage === 'player-turn-left'){
+                this.hitButton.enableAnimation('DoAFlip');
+                game.dispatch(actions.double({ position : 'left' }));
+                
+            }
+           
+    });
+
+       }
+
+       
 
        private dealAnimation() {
         this.dealLabel.enableAnimation('Spin');
@@ -832,7 +912,7 @@ export default class MREBlackjack {
             this.createPlayerCards();
             this.createDealerCards();
 
-            console.log(game.getState().deck.length)
+            console.log(game.getState().deck)
 
         });
        }
@@ -868,7 +948,7 @@ export default class MREBlackjack {
                 this.createDealerCards();
                 this.createPlayerCards();
                 this.displayWinnerRight();
-                console.log(game.getState().wonOnRight)
+  
                
             } else if (game.getState().stage === 'player-turn-left'){
                 this.stayButton.enableAnimation('DoAFlip');
