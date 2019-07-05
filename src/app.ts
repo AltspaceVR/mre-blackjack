@@ -8,6 +8,7 @@ import {
     AnimationEaseCurves,
     AnimationKeyframe,
     AnimationWrapMode,
+    AssetGroup,
     ButtonBehavior,
     Context,
     PrimitiveShape,
@@ -21,6 +22,7 @@ import {
     Asset,
     Material,
     AssetManager,
+    Texture,
 } from '@microsoft/mixed-reality-extension-sdk';
 import { platform } from 'os';
 import { ENGINE_METHOD_ALL } from 'constants';
@@ -82,6 +84,7 @@ export default class MREBlackjack {
 
     private rightHandArray: Array<ForwardPromise<Actor>> = [];
     private leftHandArray: Array<ForwardPromise<Actor>> = [];
+    private cardTextures: Array<Promise<Texture>> = [];
 
     private deck: Array<Object> = [];
 
@@ -105,7 +108,7 @@ export default class MREBlackjack {
             this.createHitButton(),
             this.createStayButton(),
             this.createDesk(),
-            this.createBlackJackDealer(),
+            // this.createBlackJackDealer(),
             this.createRootActor(),
             this.createNewRoundButton(),
             this.createSplitButton(),
@@ -115,6 +118,8 @@ export default class MREBlackjack {
         ]).catch(() => {
                 console.log('Hello there');
         });
+
+        await this.loadCardTextures();
 
         this.hitAnimation();
         this.dealAnimation();
@@ -143,6 +148,13 @@ export default class MREBlackjack {
       
         return array;
       }
+
+      private async loadCardTextures() {
+        
+        this.cardTextures.push(this.context.assetManager.createTexture('card', {
+            uri: `${this.baseUrl}/cards/1.png`
+        }))
+    }
     /**
      * This method will be called every time the Dealer DEALS or the User HITS or STANDS.
      * It will check the the conditions for whether the Dealer or the User has won the round and then display the result.
@@ -604,6 +616,7 @@ export default class MREBlackjack {
                         rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
                     }
                 },
+               
             }
         });
             rightCardPosition += 0.1;
@@ -912,7 +925,8 @@ export default class MREBlackjack {
             this.createPlayerCards();
             this.createDealerCards();
 
-            console.log(game.getState().deck)
+            // console.log(game.getState().deck)
+            console.log(this.cardTextures);
 
         });
        }
