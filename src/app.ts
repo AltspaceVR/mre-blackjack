@@ -84,7 +84,11 @@ export default class MREBlackjack {
 
     private rightHandArray: Array<ForwardPromise<Actor>> = [];
     private leftHandArray: Array<ForwardPromise<Actor>> = [];
-    private cardTextures: Array<Promise<Texture>> = [];
+    private cardTextures: Array<ForwardPromise<Texture>> = [];
+    private cardMateriels: Array<ForwardPromise<Material>> = [];
+
+
+    private cardTextureSheet: Texture;
 
     private deck: Array<Object> = [];
 
@@ -120,6 +124,7 @@ export default class MREBlackjack {
         });
 
         await this.loadCardTextures();
+        await this.createCardMaterials();
 
         this.hitAnimation();
         this.dealAnimation();
@@ -149,11 +154,26 @@ export default class MREBlackjack {
         return array;
       }
 
+
+      private async createCardMaterials(){
+
+        this.cardMateriels.push(this.context.assetManager.createMaterial('cardMaterial',{
+            mainTextureId: this.cardTextureSheet.id,
+            // mainTextureScale: {x: 0, y: 0},
+            // mainTextureOffset: {x: 420, y: 566},
+            // alphaMode: 
+
+        }))
+
+      }
       private async loadCardTextures() {
         
-        this.cardTextures.push(this.context.assetManager.createTexture('card', {
-            uri: `${this.baseUrl}/cards/1.png`
-        }))
+        const cardTexturePromise =  this.context.assetManager.createTexture('card', {
+            uri: `${this.baseUrl}/card-texture-sheet.png`,
+            // resolution: {x: 4096, y: 4096}
+        })
+
+        this.cardTextureSheet = cardTexturePromise.value;
     }
     /**
      * This method will be called every time the Dealer DEALS or the User HITS or STANDS.
@@ -599,23 +619,25 @@ export default class MREBlackjack {
                 }
             });
             // Load a glTF model
-           let rightPlayerCard =  Actor.CreateFromGltf(this.context, {
+           let rightPlayerCard =  Actor.CreatePrimitive(this.context, {
             // at the given URL
-            resourceUrl: `${this.baseUrl}/playingcard2.glb`,
-            // and spawn box colliders around the meshes.
-            colliderType: 'box',
-            // Also apply the following generic actor properties.
+            definition: {
+                shape: PrimitiveShape.Plane
+            },
             actor: {
                 parentId: this.rootActor.id,
                 name: 'Player Card Right',
                 // Parent the glTF model to the text actor. 
                 transform: {
                     local: {
-                        scale: { x: 5, y: 5, z: 5 },
+                        scale: { x: 0.4, y: 1, z: 0.5 },
                         position: {  x: rightCardPosition, y: rightCardPosition, z: rightCardPosition },
-                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                        rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                     }
                 },
+                appearance: {
+                    materialId: this.cardMateriels[0].value.id
+                }
                
             }
         });
@@ -752,7 +774,7 @@ export default class MREBlackjack {
 
         const deskPromise = Actor.CreateFromGltf(this.context, {
             // at the given URL
-            resourceUrl: `${this.baseUrl}/blackjack-table.glb`,
+            resourceUrl: `${this.baseUrl}/blackjack-table-2.glb`,
             // and spawn box colliders around the meshes.
             colliderType: 'box',
             // Also apply the following generic actor properties.
@@ -761,14 +783,15 @@ export default class MREBlackjack {
                 // Parent the glTF model to the text actor.
                 transform: {
                     local: {
-                        position: { x: 0, y: -3, z: 1 },
-                        scale: { x: .5, y: .5, z: .5 },
-                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                        position: { x: 0, y: -2, z: 1 },
+                        scale: { x: 1, y: 1, z: 1 },
+                        rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                     }
                 }
             }
         });
         this.desk = deskPromise.value;
+
 
     }
        private hitAnimation() {
@@ -926,7 +949,7 @@ export default class MREBlackjack {
             this.createDealerCards();
 
             // console.log(game.getState().deck)
-            console.log(this.cardTextures);
+            // console.log(this.cardTextures);
 
         });
        }
