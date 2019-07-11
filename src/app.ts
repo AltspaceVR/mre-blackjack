@@ -29,6 +29,10 @@ import { ENGINE_METHOD_ALL } from 'constants';
 
 
 
+import * as cardsJSON from './cards.json'
+
+
+
 /**
  * Imports the BlackJack engine.
  */
@@ -104,7 +108,7 @@ export default class MREBlackjack {
     private async started() {
 
         this.deck = game.getState().deck;
-        console.log(this.deck.length)
+        console.log(cardsJSON)
             // Call the functions with forwarded promises here
         await Promise.all([
 
@@ -157,20 +161,25 @@ export default class MREBlackjack {
 
       private async createCardMaterials(){
 
+        // let cardObject  = {
+        //     cardMaterial: this.cardMateriels[1].value.id
+        // }
+        
 
 
 
-          for(let j =0; j < 6; j++){
-            for(let i = 0; i < 9; i++){
 
-                let posX = 15 + (16 + 210) * i;
-                let posY = 2048 - (283 + 50) * (j + 1);
+          for(let cardRow = 0; cardRow < 6 ; cardRow++){
+            for(let cardColumn = 0; cardColumn < 9; cardColumn++){
+
+                let posX = 15 + (16 + 210) * cardColumn;
+                let posY = 2048 - (283 + 50) * (cardRow + 1);
 
                 this.cardMateriels.push(this.context.assetManager.createMaterial('cardMaterial',{
                     mainTextureId: this.cardTextureSheet.id,
                     mainTextureOffset: {x:  posX/2048, y: posY/2048},
                     mainTextureScale: {x: .1, y: .14},
-                    // alphaMode: 
+                    
         
                 }))
 
@@ -183,7 +192,7 @@ export default class MREBlackjack {
         
         const cardTexturePromise =  this.context.assetManager.createTexture('card', {
             uri: `${this.baseUrl}/card-texture-sheet.png`,
-            // resolution: {x: 420, y: 566}
+            // resolution: {x: 2048, y: 2048}
         })
 
         this.cardTextureSheet = cardTexturePromise.value;
@@ -656,6 +665,7 @@ export default class MREBlackjack {
         });
             rightCardPosition += 0.1;
             this.rightHandArray.push(rightPlayerCard);
+            console.log(this.deck.length);
         }
 
         if(leftHandArray !== undefined){
