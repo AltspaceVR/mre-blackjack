@@ -157,20 +157,33 @@ export default class MREBlackjack {
 
       private async createCardMaterials(){
 
-        this.cardMateriels.push(this.context.assetManager.createMaterial('cardMaterial',{
-            mainTextureId: this.cardTextureSheet.id,
-            // mainTextureScale: {x: 0, y: 0},
-            // mainTextureOffset: {x: 420, y: 566},
-            // alphaMode: 
 
-        }))
+
+
+          for(let j =0; j < 6; j++){
+            for(let i = 0; i < 9; i++){
+
+                let posX = 15 + (16 + 210) * i;
+                let posY = 2048 - (283 + 50) * (j + 1);
+
+                this.cardMateriels.push(this.context.assetManager.createMaterial('cardMaterial',{
+                    mainTextureId: this.cardTextureSheet.id,
+                    mainTextureOffset: {x:  posX/2048, y: posY/2048},
+                    mainTextureScale: {x: .1, y: .14},
+                    // alphaMode: 
+        
+                }))
+
+            }
+        }
+       
 
       }
       private async loadCardTextures() {
         
         const cardTexturePromise =  this.context.assetManager.createTexture('card', {
             uri: `${this.baseUrl}/card-texture-sheet.png`,
-            // resolution: {x: 4096, y: 4096}
+            // resolution: {x: 420, y: 566}
         })
 
         this.cardTextureSheet = cardTexturePromise.value;
@@ -636,7 +649,7 @@ export default class MREBlackjack {
                     }
                 },
                 appearance: {
-                    materialId: this.cardMateriels[0].value.id
+                    materialId: this.cardMateriels[11].value.id
                 }
                
             }
