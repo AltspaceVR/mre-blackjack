@@ -23,13 +23,22 @@ import {
     Material,
     AssetManager,
     Texture,
+    Text,
 } from '@microsoft/mixed-reality-extension-sdk';
 import { platform } from 'os';
 import { ENGINE_METHOD_ALL } from 'constants';
 
 
 
-import * as cardsJSON from './cards.json'
+
+interface cardJSON{
+    text:string,
+    suite:string,
+    value: number,
+    color:string,
+    material?: Material
+}
+
 
 
 
@@ -88,14 +97,68 @@ export default class MREBlackjack {
 
     private rightHandArray: Array<ForwardPromise<Actor>> = [];
     private leftHandArray: Array<ForwardPromise<Actor>> = [];
+    
     private cardTextures: Array<ForwardPromise<Texture>> = [];
     private cardMateriels: Array<ForwardPromise<Material>> = [];
-
-
     private cardTextureSheet: Texture;
+
 
     private deck: Array<Object> = [];
 
+    private JSON: Array<cardJSON> = [ { "text": "2", "suite": "spades", "value": 2, "color": "B" },
+    { "text": "3", "suite": "spades", "value": 3, "color": "B" },
+    { "text": "4", "suite": "spades", "value": 4, "color": "B" },
+    { "text": "5", "suite": "spades", "value": 5, "color": "B" },
+    { "text": "6", "suite": "spades", "value": 6, "color": "B" },
+    { "text": "7", "suite": "spades", "value": 7, "color": "B" },
+    { "text": "8", "suite": "spades", "value": 8, "color": "B" },
+    { "text": "9", "suite": "spades", "value": 9, "color": "B" },
+    { "text": "10", "suite": "spades", "value": 10, "color": "B" },
+    { "text": "J", "suite": "spades", "value": 10, "color": "B" },
+    { "text": "Q", "suite": "spades", "value": 10, "color": "B" },
+    { "text": "K", "suite": "spades", "value": 10, "color": "B" },
+    { "text": "A", "suite": "spades", "value": 1, "color": "B" },
+    { "text": "2", "suite": "hearts", "value": 2, "color": "R" },
+    { "text": "3", "suite": "hearts", "value": 3, "color": "R" },
+    { "text": "4", "suite": "hearts", "value": 4, "color": "R" },
+    { "text": "5", "suite": "hearts", "value": 5, "color": "R" },
+    { "text": "6", "suite": "hearts", "value": 6, "color": "R" },
+    { "text": "7", "suite": "hearts", "value": 7, "color": "R" },
+    { "text": "8", "suite": "hearts", "value": 8, "color": "R" },
+    { "text": "9", "suite": "hearts", "value": 9, "color": "R" },
+    { "text": "10", "suite": "hearts", "value": 10, "color": "R" },
+    { "text": "J", "suite": "hearts", "value": 10, "color": "R" },
+    { "text": "Q", "suite": "hearts", "value": 10, "color": "R" },
+    { "text": "K", "suite": "hearts", "value": 10, "color": "R" },
+    { "text": "A", "suite": "hearts", "value": 1, "color": "R" },
+    { "text": "2", "suite": "clubs", "value": 2, "color": "B" },
+    { "text": "3", "suite": "clubs", "value": 3, "color": "B" },
+    { "text": "4", "suite": "clubs", "value": 4, "color": "B" },
+    { "text": "5", "suite": "clubs", "value": 5, "color": "B" },
+    { "text": "6", "suite": "clubs", "value": 6, "color": "B" },
+    { "text": "7", "suite": "clubs", "value": 7, "color": "B" },
+    { "text": "8", "suite": "clubs", "value": 8, "color": "B" },
+    { "text": "9", "suite": "clubs", "value": 9, "color": "B" },
+    { "text": "10", "suite": "clubs", "value": 10, "color": "B" },
+    { "text": "J", "suite": "clubs", "value": 10, "color": "B" },
+    { "text": "Q", "suite": "clubs", "value": 10, "color": "B" },
+    { "text": "K", "suite": "clubs", "value": 10, "color": "B" },
+    { "text": "A", "suite": "clubs", "value": 1, "color": "B" },
+    { "text": "2", "suite": "diamonds", "value": 2, "color": "R" },
+    { "text": "3", "suite": "diamonds", "value": 3, "color": "R" },
+    { "text": "4", "suite": "diamonds", "value": 4, "color": "R" },
+    { "text": "5", "suite": "diamonds", "value": 5, "color": "R" },
+    { "text": "6", "suite": "diamonds", "value": 6, "color": "R" },
+    { "text": "7", "suite": "diamonds", "value": 7, "color": "R" },
+    { "text": "8", "suite": "diamonds", "value": 8, "color": "R" },
+    { "text": "9", "suite": "diamonds", "value": 9, "color": "R" },
+    { "text": "10", "suite": "diamonds", "value": 10, "color": "R" },
+    { "text": "J", "suite": "diamonds", "value": 10, "color": "R" },
+    { "text": "Q", "suite": "diamonds", "value": 10, "color": "R" },
+    { "text": "K", "suite": "diamonds", "value": 10, "color": "R" },
+    { "text": "A", "suite": "diamonds", "value": 1, "color": "R" }]
+
+    
 
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
@@ -107,8 +170,7 @@ export default class MREBlackjack {
      */
     private async started() {
 
-        this.deck = game.getState().deck;
-        console.log(cardsJSON)
+        
             // Call the functions with forwarded promises here
         await Promise.all([
 
@@ -129,13 +191,25 @@ export default class MREBlackjack {
 
         await this.loadCardTextures();
         await this.createCardMaterials();
-
+        
+        
+        // this.assignCardMaterials();
         this.hitAnimation();
         this.dealAnimation();
         this.stayAnimation();
         this.newRoundAnimation();
         this.splitAnimation();
         this.doubleDownAnimation();
+
+        // console.log(this.cardMateriels[0].value.id)
+
+        for(let i = 0; i < 52; i++){
+           
+            this.JSON[i].material = this.cardMateriels[i].value
+        }
+
+      
+        game.setState({deck: this.shuffle(this.JSON)})
     }
 
 
@@ -158,13 +232,8 @@ export default class MREBlackjack {
         return array;
       }
 
-
       private async createCardMaterials(){
 
-        // let cardObject  = {
-        //     cardMaterial: this.cardMateriels[1].value.id
-        // }
-        
 
 
 
@@ -615,6 +684,7 @@ export default class MREBlackjack {
     }
 
     private async createPlayerCards() {
+    
         const rightHandArray = game.getState().handInfo.right.cards;
         const leftHandArray = game.getState().handInfo.left.cards;
         let rightCardPosition = 0;
@@ -658,14 +728,16 @@ export default class MREBlackjack {
                     }
                 },
                 appearance: {
-                    materialId: this.cardMateriels[11].value.id
+                    materialId: rightHandArray[card].material.id
                 }
                
             }
         });
             rightCardPosition += 0.1;
             this.rightHandArray.push(rightPlayerCard);
-            console.log(this.deck.length);
+            // console.log(this.deck.length);
+            // console.log(this.cardMateriels);
+            // console.log(rightHandArray[0].material.id)
         }
 
         if(leftHandArray !== undefined){
@@ -964,7 +1036,7 @@ export default class MREBlackjack {
 
             if(game.getState().deck.length === 0){
                 
-                game.setState({deck: this.shuffle(this.deck)});
+                game.setState({deck: this.shuffle(this.JSON)});
             }
             this.dealButton.enableAnimation('DoAFlip');
             game.dispatch(actions.deal());
