@@ -605,34 +605,23 @@ export default class MREBlackjack {
 
         for(let cards = 0; cards < handArray.length; cards++){
 
-            Actor.CreateEmpty(this.context, {
-                actor: {
-                    parentId: this.rootActor.id,
-                    name: 'Dealer Card Text',
-                    transform: {
-                        app: { position: { x: cardPosition, y: 0, z: 1},
-                        rotation: Quaternion.FromEulerAngles(1200, -0, 0), }
-                    },
-                    text: {
-                        contents: `${handArray[cards].value}`,
-                        anchor: TextAnchorLocation.MiddleCenter,
-                        color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                        height: 0.3
-                    }
-                }
-            });
 
-            Actor.CreateFromGltf(this.context, {
-            resourceUrl: `${this.baseUrl}/playingcard2.glb`,
+            Actor.CreatePrimitive(this.context, {
+                definition: {
+                    shape: PrimitiveShape.Plane
+                },
             actor: {
                 parentId: this.rootActor.id,
                 name: 'Dealer Card',
                 transform: {
                     local: {
-                        scale: { x: 5, y: 5, z: 5 },
-                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                        scale: { x: 0.4, y: 1, z: 0.5 },
+                        rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                         position: {x: cardPosition , y: 0, z: 1}
                     }
+                },
+                appearance: {
+                    materialId: handArray[cards].material.id
                 }
             }
         });
@@ -694,22 +683,7 @@ export default class MREBlackjack {
         
 
         for(let card = 0; card < rightHandArray.length; card++){
-            Actor.CreateEmpty(this.context, {
-                actor: {
-                    parentId: this.rootActor.id,
-                    name: 'Player Card Text Right',
-                    transform: {
-                        app: { position: { x: rightCardPosition, y: rightCardPosition, z: 0},
-                        rotation: Quaternion.FromEulerAngles(1200, -0, 0), }
-                    },
-                    text: {
-                        contents: `${rightHandArray[card].value}`,
-                        anchor: TextAnchorLocation.MiddleCenter,
-                        color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                        height: 0.3
-                    }
-                }
-            });
+
             // Load a glTF model
            let rightPlayerCard =  Actor.CreatePrimitive(this.context, {
             // at the given URL
@@ -735,46 +709,33 @@ export default class MREBlackjack {
         });
             rightCardPosition += 0.1;
             this.rightHandArray.push(rightPlayerCard);
-            // console.log(this.deck.length);
-            // console.log(this.cardMateriels);
-            // console.log(rightHandArray[0].material.id)
+            
+            
         }
 
         if(leftHandArray !== undefined){
+            
             for(let card = 0; card < leftHandArray.length; card++){
-                Actor.CreateEmpty(this.context, {
-                    actor: {
-                        parentId: this.rootActor.id,
-                        name: 'Player Card Text Left',
-                        transform: {
-                            app: { position: { x: leftCardPositionX, y: leftCardPositionY, z: 0},
-                            rotation: Quaternion.FromEulerAngles(1200, -0, 0), }
-                        },
-                        text: {
-                            contents: `${leftHandArray[card].value}`,
-                            anchor: TextAnchorLocation.MiddleCenter,
-                            color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                            height: 0.3
-                        }
-                    }
-                });
-                // Load a glTF model
-                let leftPlayerCard = Actor.CreateFromGltf(this.context, {
+ 
+               // Load a glTF model
+                let leftPlayerCard = Actor.CreatePrimitive(this.context, {
                 // at the given URL
-                resourceUrl: `${this.baseUrl}/playingcard2.glb`,
-                // and spawn box colliders around the meshes.
-                colliderType: 'box',
-                // Also apply the following generic actor properties.
+                definition: {
+                    shape: PrimitiveShape.Plane
+                },
                 actor: {
                     parentId: this.rootActor.id,
                     name: 'Player Card Left',
                     // Parent the glTF model to the text actor. 
                     transform: {
                         local: {
-                            scale: { x: 5, y: 5, z: 5 },
+                            scale: { x: 0.4, y: 1, z: 0.5 },
                             position: {  x: leftCardPositionX, y: leftCardPositionY, z: leftCardPositionY },
-                            rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
+                            rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                         }
+                    },
+                    appearance: {
+                        materialId: leftHandArray[card].material.id
                     }
                 }
             });
