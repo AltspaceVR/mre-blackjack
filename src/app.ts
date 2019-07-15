@@ -77,6 +77,7 @@ export default class MREBlackjack {
 // tslint:disable-next-line: max-line-length
     // Here, we're creating null anctors. We'll set the values of the forwarded promises of the created GLTFs to these variables for reference.
     private rootActor: Actor;
+    private lightActor: Actor;
     private hitLabel: Actor;
     private hitButton: Actor;
     private dealLabel: Actor;
@@ -187,6 +188,8 @@ export default class MREBlackjack {
         ]).catch(() => {
                 console.log('Hello there');
         });
+
+        this.createLightActor()
         this.hitAnimation();
         this.dealAnimation();
         this.stayAnimation();
@@ -371,6 +374,21 @@ export default class MREBlackjack {
             }
         });
         this.rootActor = rootActorPromise.value;
+    }
+
+    private createLightActor() {
+        const lightActorPromise = Actor.CreateEmpty(this.context, {
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'Light Actor',
+                // Parent the glTF model to the text actor.
+                light: {
+                    enabled: true,
+                    intensity: 6,
+                }
+            }
+        });
+        this.lightActor = lightActorPromise.value;
     }
     private async createHitButton() {
         const hitLabelPromise = Actor.CreateEmpty(this.context, {
@@ -659,10 +677,12 @@ export default class MREBlackjack {
     private async createPlayerCards() { 
         const rightHandArray = game.getState().handInfo.right.cards;
         const leftHandArray = game.getState().handInfo.left.cards;
-        let rightCardPositionX = 0;
+        let rightCardPositionX = 0.5;
         let rightCardPositionY = 0;
-        let leftCardPositionX = -0.5;
+        let rightCardPositionZ = 0;
+        let leftCardPositionX = 0.2;
         let leftCardPositionY = 0;
+        let leftCardPositionZ = 0
         for(let card = 0; card < rightHandArray.length; card++){
 
             // Load a glTF model
@@ -678,7 +698,7 @@ export default class MREBlackjack {
                 transform: {
                     local: {
                         scale: { x: 0.2, y: 1, z: 0.2 },
-                        position: {  x: this.playerOneHandAnchor().x + rightCardPositionX, y: this.playerOneHandAnchor().y + rightCardPositionY, z:  this.playerOneHandAnchor().z + rightCardPositionX },
+                        position: {  x: rightCardPositionX, y: this.playerOneHandAnchor().y + rightCardPositionY, z:  this.playerOneHandAnchor().z - rightCardPositionZ },
                         rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                     }
                 },
@@ -688,8 +708,9 @@ export default class MREBlackjack {
                
             }
         });
-            rightCardPositionX += 0.1;
+            rightCardPositionX -= 0.1;
             rightCardPositionY += 0.01
+            rightCardPositionZ -= 0.1;
             this.rightHandArray.push(rightPlayerCard);
             
         console.log(this.playerOneHandAnchor().x)
@@ -713,8 +734,8 @@ export default class MREBlackjack {
                     // Parent the glTF model to the text actor. 
                     transform: {
                         local: {
-                            scale: { x: 0.4, y: 1, z: 0.5 },
-                            position: {  x: this.playerOneHandAnchor().x - leftCardPositionX, y: this.playerOneHandAnchor().y + leftCardPositionY, z:  this.playerOneHandAnchor().z + leftCardPositionY },
+                            scale: { x: 0.2, y: 1, z: 0.2 },
+                            position: {  x: leftCardPositionX, y:  this.playerOneHandAnchor().y + leftCardPositionY, z:   this.playerOneHandAnchor().z + leftCardPositionZ },
                             rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                         }
                     },
@@ -724,7 +745,8 @@ export default class MREBlackjack {
                 }
             });
                 leftCardPositionX -= 0.1;
-                leftCardPositionY += 0.1;
+                leftCardPositionY += 0.01;
+                leftCardPositionZ += 0.1
                 this.leftHandArray.push(leftPlayerCard);
             }
         }
@@ -752,7 +774,7 @@ export default class MREBlackjack {
                     // Parent the glTF model to the text actor.
                     transform: {
                         local: {
-                            position: {x: this.rightHandArray[0].value.transform.app.position.x + 0.1, y: -0.3, z: this.rightHandArray[0].value.transform.app.position.z},
+                            position: {x: this.rightHandArray[0].value.transform.app.position.x + 0.1, y: -0.4, z: this.rightHandArray[0].value.transform.app.position.z},
                             scale: { x: 1, y: 1, z: 1 },
                             rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
                         }
@@ -773,7 +795,7 @@ export default class MREBlackjack {
                     // Parent the glTF model to the text actor.
                     transform: {
                         local: {
-                            position: {x: this.leftHandArray[0].value.transform.app.position.x - 0.1, y: -0.3, z: this.leftHandArray[0].value.transform.app.position.z},
+                            position: {x: this.leftHandArray[0].value.transform.app.position.x - 0.1, y: -0.4, z: this.leftHandArray[0].value.transform.app.position.z},
                             scale: { x: 1, y: 1, z: 1 },
                             rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
                         }
@@ -844,6 +866,7 @@ export default class MREBlackjack {
                 this.createDealerCards();
                 this.displayWinnerRight();
                 this.displayWinnerLeft();
+                
             }
     });
 
@@ -947,6 +970,7 @@ export default class MREBlackjack {
             this.createPlayerCards();
             this.createDealerCards();
             this.displayWinnerRight();
+            // console.log(game.getState())
         });
        }
 
