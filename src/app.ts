@@ -103,8 +103,6 @@ export default class MREBlackjack {
     private cardTextureSheet: Texture;
 
 
-    private deck: Array<Object> = [];
-
     private JSON: Array<cardJSON> = [ { "text": "2", "suite": "spades", "value": 2, "color": "B" },
     { "text": "3", "suite": "spades", "value": 3, "color": "B" },
     { "text": "4", "suite": "spades", "value": 4, "color": "B" },
@@ -178,22 +176,17 @@ export default class MREBlackjack {
             this.createHitButton(),
             this.createStayButton(),
             this.createDesk(),
-            // this.createBlackJackDealer(),
             this.createRootActor(),
             this.createNewRoundButton(),
             this.createSplitButton(),
             this.createDeckIndicator(),
             this.createDoubleDownButton(),
+            this.loadCardTextures(),
+            this.createCardMaterials(),
 
         ]).catch(() => {
                 console.log('Hello there');
         });
-
-        await this.loadCardTextures();
-        await this.createCardMaterials();
-        
-        
-        // this.assignCardMaterials();
         this.hitAnimation();
         this.dealAnimation();
         this.stayAnimation();
@@ -201,69 +194,66 @@ export default class MREBlackjack {
         this.splitAnimation();
         this.doubleDownAnimation();
 
-        // console.log(this.cardMateriels[0].value.id)
-
         for(let i = 0; i < 52; i++){
-           
-            this.JSON[i].material = this.cardMateriels[i].value
+            this.JSON[i].material = this.cardMateriels[i].value;
         }
-
-      
-        game.setState({deck: this.shuffle(this.JSON)})
+        game.setState({deck: this.shuffle(this.JSON)});
     }
 
 
+    private playerOneHandAnchor(Vector3?: Vector3){
+
+        return this.desk.children[0].findChildrenByName('P1_Hand', false)[0].transform.app.position
+
+    }
+
+    private dealerHandAnchor(Vector3?: Vector3){
+
+        return this.desk.children[0].findChildrenByName('Dealer_Hand', false)[0].transform.app.position
+
+    }
+
+    private playerPotAnchor(Vector3?: Vector3){
+
+        return this.desk.children[0].findChildrenByName('P1_Pot', false)[0].transform.app.position
+
+    }
+
     private shuffle(array: any) {
         var currentIndex = array.length, temporaryValue, randomIndex;
-      
         // While there remain elements to shuffle...
         while (0 !== currentIndex) {
-      
           // Pick a remaining element...
           randomIndex = Math.floor(Math.random() * currentIndex);
           currentIndex -= 1;
-      
           // And swap it with the current element.
           temporaryValue = array[currentIndex];
           array[currentIndex] = array[randomIndex];
           array[randomIndex] = temporaryValue;
         }
-      
         return array;
       }
 
-      private async createCardMaterials(){
-
-
-
-
-
-          for(let cardRow = 0; cardRow < 6 ; cardRow++){
-            for(let cardColumn = 0; cardColumn < 9; cardColumn++){
-
+      private async createCardMaterials() {
+          for (let cardRow = 0; cardRow < 6 ; cardRow++){
+            for (let cardColumn = 0; cardColumn < 9; cardColumn++){
                 let posX = 15 + (16 + 210) * cardColumn;
                 let posY = 2048 - (283 + 50) * (cardRow + 1);
-
                 this.cardMateriels.push(this.context.assetManager.createMaterial('cardMaterial',{
                     mainTextureId: this.cardTextureSheet.id,
-                    mainTextureOffset: {x:  posX/2048, y: posY/2048},
+                    mainTextureOffset: {x:  posX / 2048, y: posY / 2048},
                     mainTextureScale: {x: .1, y: .14},
-                    
-        
-                }))
+                }));
 
             }
         }
-       
 
       }
       private async loadCardTextures() {
-        
         const cardTexturePromise =  this.context.assetManager.createTexture('card', {
             uri: `${this.baseUrl}/card-texture-sheet.png`,
             // resolution: {x: 2048, y: 2048}
-        })
-
+        });
         this.cardTextureSheet = cardTexturePromise.value;
     }
     /**
@@ -282,7 +272,7 @@ export default class MREBlackjack {
                             name: 'dealer win',
                             transform: {
                                 // Positions the text
-                                app: { position: { x: 0.5, y: 1, z: 0 } }
+                                app: { position: { x: 0.5, y: -0.2, z: 0 } }
                             },
                             // Here we're configuring the properties of the displayed text.
                             text: {
@@ -303,7 +293,7 @@ export default class MREBlackjack {
                             name: 'player win',
                             transform: {
                                 // Positions the text
-                                app: { position: { x: 0.5, y: 1, z: 0 } }
+                                app: { position: { x: 0.5, y: -0.2, z: 0 } }
                             },
                             // Here we're configuring the properties of the displayed text.
                             text: {
@@ -373,7 +363,6 @@ export default class MREBlackjack {
      * Set any actor you want mass deleted with the id of this actor.
      */
     private createRootActor() {
-
         const rootActorPromise = Actor.CreateEmpty(this.context, {
             // Also apply the following generic actor properties.
             actor: {
@@ -382,9 +371,6 @@ export default class MREBlackjack {
             }
         });
         this.rootActor = rootActorPromise.value;
-
-
-
     }
     private async createHitButton() {
         const hitLabelPromise = Actor.CreateEmpty(this.context, {
@@ -392,7 +378,7 @@ export default class MREBlackjack {
                 name: 'Text',
                 transform: {
                     // Positions the text
-                    app: { position: { x: 0.5, y: 0, z: 0 } }
+                    app: { position: { x: 0.5, y: -0.8, z: -1.1 } }
                 },
                // Here we're configuring the properties of the displayed text.
                 text: {
@@ -419,7 +405,7 @@ export default class MREBlackjack {
                 parentId: this.hitLabel.id,
                 transform: {
                     local: {
-                        scale: { x: 0.01, y: 0.01, z: 0.02 },
+                        scale: { x: 0.005, y: 0.005, z: 0.005 },
                         rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                     }
                 }
@@ -435,7 +421,7 @@ export default class MREBlackjack {
                 name: 'Text',
                 transform: {
                     // Positions the text
-                    app: { position: { x: 1, y: 0, z: 0.6 } }
+                    app: { position: { x: 1, y: -0.8, z: -1.4 } }
                 },
                 // Here we're configuring the properties of the displayed text.
                 text: {
@@ -462,7 +448,7 @@ export default class MREBlackjack {
                 parentId: this.stayLabel.id,
                 transform: {
                     local: {
-                        scale: { x: 0.015, y: 0.015, z: 0.01 },
+                        scale: { x: 0.005, y: 0.005, z: 0.005 },
                         rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                     }
                 }
@@ -478,7 +464,7 @@ export default class MREBlackjack {
                 name: 'Double Down Text',
                 transform: {
                     // Positions the text
-                    app: { position: { x: 1, y: 0, z: 0.1 } }
+                    app: { position: { x: 1, y: -0.8, z: -1.2 } }
                 },
                 // Here we're configuring the properties of the displayed text.
                 text: {
@@ -505,7 +491,7 @@ export default class MREBlackjack {
                 parentId: this.doubleDownLabel.id,
                 transform: {
                     local: {
-                        scale: { x: 0.015, y: 0.015, z: 0.01 },
+                        scale: { x: 0.005, y: 0.005, z: 0.005 },
                         rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                     }
                 }
@@ -521,7 +507,7 @@ export default class MREBlackjack {
             actor: {
                 name: 'Text',
                 transform: {
-                    app: { position: { x: 0.5, y: 0, z: 1 } }
+                    app: { position: { x: 0.5, y: -0.8, z: -0.9 } }
                 },
                 text: {
                     contents: "Deal",
@@ -547,7 +533,7 @@ export default class MREBlackjack {
             parentId: this.dealLabel.id,
             transform: {
                 local: {
-                    scale: { x: 0.01, y: 0.01, z: 0.02 },
+                    scale: { x: 0.005, y: 0.005, z: 0.005 },
                     rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                 }
             }
@@ -563,7 +549,7 @@ export default class MREBlackjack {
             actor: {
                 name: 'Text',
                 transform: {
-                    app: { position: { x: 1, y: 0, z: 1 } }
+                    app: { position: { x: 1, y: -0.8, z: -0.9 } }
                 },
                 text: {
                     contents: "New Round",
@@ -589,7 +575,7 @@ export default class MREBlackjack {
             parentId: this.newRoundLabel.id,
             transform: {
                 local: {
-                    scale: { x: 0.01, y: 0.01, z: 0.02 },
+                    scale: { x: 0.005, y: 0.005, z: 0.005 },
                     rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                 }
             }
@@ -604,8 +590,6 @@ export default class MREBlackjack {
         let cardPosition = 0;
 
         for(let cards = 0; cards < handArray.length; cards++){
-
-
             Actor.CreatePrimitive(this.context, {
                 definition: {
                     shape: PrimitiveShape.Plane
@@ -615,9 +599,9 @@ export default class MREBlackjack {
                 name: 'Dealer Card',
                 transform: {
                     local: {
-                        scale: { x: 0.4, y: 1, z: 0.5 },
+                        scale: { x: 0.2, y: 1, z: 0.2 },
                         rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
-                        position: {x: cardPosition , y: 0, z: 1}
+                        position: {x: cardPosition , y: this.dealerHandAnchor().y, z: this.dealerHandAnchor().z}
                     }
                 },
                 appearance: {
@@ -625,7 +609,7 @@ export default class MREBlackjack {
                 }
             }
         });
-            cardPosition -= 0.4;
+            cardPosition -= 0.2;
         }
     }
 
@@ -635,7 +619,7 @@ export default class MREBlackjack {
                 name: 'Text',
                 transform: {
                     // Positions the text
-                    app: { position: { x: 0.5, y: 0, z: 0.4 } }
+                    app: { position: { x: 0.5, y: -0.8, z: -1.4 } }
                 },
                 // Here we're configuring the properties of the displayed text.
                 text: {
@@ -662,7 +646,7 @@ export default class MREBlackjack {
                 parentId: this.splitLabel.id,
                 transform: {
                     local: {
-                        scale: { x: 0.01, y: 0.01, z: 0.02 },
+                        scale: { x: 0.005, y: 0.005, z: 0.005 },
                         rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
                     }
                 }
@@ -672,16 +656,13 @@ export default class MREBlackjack {
 
     }
 
-    private async createPlayerCards() {
-    
+    private async createPlayerCards() { 
         const rightHandArray = game.getState().handInfo.right.cards;
         const leftHandArray = game.getState().handInfo.left.cards;
-        let rightCardPosition = 0;
+        let rightCardPositionX = 0;
+        let rightCardPositionY = 0;
         let leftCardPositionX = -0.5;
         let leftCardPositionY = 0;
-
-        
-
         for(let card = 0; card < rightHandArray.length; card++){
 
             // Load a glTF model
@@ -696,8 +677,8 @@ export default class MREBlackjack {
                 // Parent the glTF model to the text actor. 
                 transform: {
                     local: {
-                        scale: { x: 0.4, y: 1, z: 0.5 },
-                        position: {  x: rightCardPosition, y: rightCardPosition, z: rightCardPosition },
+                        scale: { x: 0.2, y: 1, z: 0.2 },
+                        position: {  x: this.playerOneHandAnchor().x + rightCardPositionX, y: this.playerOneHandAnchor().y + rightCardPositionY, z:  this.playerOneHandAnchor().z + rightCardPositionX },
                         rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                     }
                 },
@@ -707,8 +688,11 @@ export default class MREBlackjack {
                
             }
         });
-            rightCardPosition += 0.1;
+            rightCardPositionX += 0.1;
+            rightCardPositionY += 0.01
             this.rightHandArray.push(rightPlayerCard);
+            
+        console.log(this.playerOneHandAnchor().x)
             
             
         }
@@ -730,7 +714,7 @@ export default class MREBlackjack {
                     transform: {
                         local: {
                             scale: { x: 0.4, y: 1, z: 0.5 },
-                            position: {  x: leftCardPositionX, y: leftCardPositionY, z: leftCardPositionY },
+                            position: {  x: this.playerOneHandAnchor().x - leftCardPositionX, y: this.playerOneHandAnchor().y + leftCardPositionY, z:  this.playerOneHandAnchor().z + leftCardPositionY },
                             rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                         }
                     },
@@ -746,6 +730,7 @@ export default class MREBlackjack {
         }
         
         this.createDeckIndicator();
+        //Dealer_Hand
     }
 
 /**
@@ -767,7 +752,7 @@ export default class MREBlackjack {
                     // Parent the glTF model to the text actor.
                     transform: {
                         local: {
-                            position: {x: this.rightHandArray[0].value.transform.app.position.x + 0.1, y: 0.5, z: this.rightHandArray[0].value.transform.app.position.z},
+                            position: {x: this.rightHandArray[0].value.transform.app.position.x + 0.1, y: -0.3, z: this.rightHandArray[0].value.transform.app.position.z},
                             scale: { x: 1, y: 1, z: 1 },
                             rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
                         }
@@ -788,7 +773,7 @@ export default class MREBlackjack {
                     // Parent the glTF model to the text actor.
                     transform: {
                         local: {
-                            position: {x: this.leftHandArray[0].value.transform.app.position.x - 0.1, y: 0.5, z: this.leftHandArray[0].value.transform.app.position.z},
+                            position: {x: this.leftHandArray[0].value.transform.app.position.x - 0.1, y: -0.3, z: this.leftHandArray[0].value.transform.app.position.z},
                             scale: { x: 1, y: 1, z: 1 },
                             rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
                         }
@@ -802,40 +787,17 @@ export default class MREBlackjack {
         
 
     }
-    private async createBlackJackDealer() {
-
-        const blackjackDealerPromise = Actor.CreateFromGltf(this.context, {
-            // at the given URL
-            resourceUrl: `${this.baseUrl}/phil.glb`,
-            // and spawn box colliders around the meshes.
-            colliderType: 'box',
-            // Also apply the following generic actor properties.
-            actor: {
-                name: 'Phil',
-                // Parent the glTF model to the text actor.
-                transform: {
-                    local: {
-                        position: { x: 0, y: -0.5, z: 3.1 },
-                        scale: { x: .3, y: .3, z: .3 },
-                        rotation: Quaternion.FromEulerAngles(300, -Math.PI, 0),
-                    }
-                }
-            }
-        });
-        this.blackjackDealer = blackjackDealerPromise.value;
-
-    }
 
     private async createDesk() {
 
         const deskPromise = Actor.CreateFromGltf(this.context, {
             // at the given URL
             resourceUrl: `${this.baseUrl}/blackjack-table-2.glb`,
+            assetName: 'Table/Table_Mesh',
             // and spawn box colliders around the meshes.
-            colliderType: 'box',
             // Also apply the following generic actor properties.
             actor: {
-                name: 'Desk',
+                name: "desk",
                 // Parent the glTF model to the text actor.
                 transform: {
                     local: {
@@ -843,12 +805,11 @@ export default class MREBlackjack {
                         scale: { x: 1, y: 1, z: 1 },
                         rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                     }
-                }
+                },
             }
         });
         this.desk = deskPromise.value;
-
-
+        // console.log(this.desk);
     }
        private hitAnimation() {
 
@@ -857,18 +818,16 @@ export default class MREBlackjack {
     // Trigger the grow/shrink animations on hover.
         hitButtonBehavior.onHover('enter', () => {
         this.hitButton.animateTo(
-            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
     });
         hitButtonBehavior.onHover('exit', () => {
         this.hitButton.animateTo(
-            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
     });
 
     // When hit button is clicked trigger game dispatch to hit
-
-   
         hitButtonBehavior.onClick(() => {
-            if(game.getState().stage === 'player-turn-right'){
+            if (game.getState().stage === 'player-turn-right'){
                 this.hitButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.hit("right"));
                 this.rootActor.destroy();
@@ -876,9 +835,7 @@ export default class MREBlackjack {
                 this.createPlayerCards();
                 this.createDealerCards();
                 this.displayWinnerRight();
-                
-          
-            }else if (game.getState().stage === 'player-turn-left'){
+            } else if (game.getState().stage === 'player-turn-left'){
                 this.hitButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.hit({ position : 'left' }));
                 this.rootActor.destroy();
@@ -887,24 +844,21 @@ export default class MREBlackjack {
                 this.createDealerCards();
                 this.displayWinnerRight();
                 this.displayWinnerLeft();
-                
             }
     });
 
        }
 
        private newRoundAnimation() {
-
         const newRoundButtonBehavior = this.newRoundButton.setBehavior(ButtonBehavior);
-        
     // Trigger the grow/shrink animations on hover.
         newRoundButtonBehavior.onHover('enter', () => {
         this.newRoundButton.animateTo(
-            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
     });
         newRoundButtonBehavior.onHover('exit', () => {
         this.newRoundButton.animateTo(
-            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
     });
 
     // When hit button is clicked trigger game dispatch to hit
@@ -919,15 +873,14 @@ export default class MREBlackjack {
        private splitAnimation() {
 
         const splitButtonBehavior = this.splitButton.setBehavior(ButtonBehavior);
-        
     // Trigger the grow/shrink animations on hover.
         splitButtonBehavior.onHover('enter', () => {
         this.splitButton.animateTo(
-            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
     });
         splitButtonBehavior.onHover('exit', () => {
         this.splitButton.animateTo(
-            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
     });
 
     // When hit button is clicked trigger game dispatch to hit
@@ -936,7 +889,6 @@ export default class MREBlackjack {
             this.rootActor.destroy();
             this.createRootActor();
             this.createPlayerCards();
-           
     });
 
        }
@@ -944,37 +896,29 @@ export default class MREBlackjack {
        private doubleDownAnimation() {
 
         const doubleDownButtonBehavior = this.doubleDownButton.setBehavior(ButtonBehavior);
-        
     // Trigger the grow/shrink animations on hover.
         doubleDownButtonBehavior.onHover('enter', () => {
         this.doubleDownButton.animateTo(
-            { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
     });
         doubleDownButtonBehavior.onHover('exit', () => {
         this.doubleDownButton.animateTo(
-            { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
     });
 
     // When hit button is clicked trigger game dispatch to hit
         doubleDownButtonBehavior.onClick(() => {
-            if(game.getState().stage === 'player-turn-right'){
+            if (game.getState().stage === 'player-turn-right') {
                 this.hitButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.double("right"));
-                
-          
-            }else if (game.getState().stage === 'player-turn-left'){
+            } else if (game.getState().stage === 'player-turn-left') {
                 this.hitButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.double({ position : 'left' }));
-                
             }
-           
     });
 
        }
-
-       
-
-       private dealAnimation() {
+      private dealAnimation() {
         this.dealLabel.enableAnimation('Spin');
 
         // Button behaviors have two pairs of events: hover start/stop, and click start/stop.
@@ -984,29 +928,25 @@ export default class MREBlackjack {
         dealbuttonBehavior.onHover('enter', () => {
             this.dealButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
         });
         dealbuttonBehavior.onHover('exit', () => {
             this.dealButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
         });
 
         // When deal button is clicked trigger deal action.
         dealbuttonBehavior.onClick(() => {
 
-            if(game.getState().deck.length === 0){
-                
+            if (game.getState().deck.length === 0) {
                 game.setState({deck: this.shuffle(this.JSON)});
             }
             this.dealButton.enableAnimation('DoAFlip');
             game.dispatch(actions.deal());
             this.createPlayerCards();
             this.createDealerCards();
-
-            // console.log(game.getState().deck)
-            // console.log(this.cardTextures);
-
+            this.displayWinnerRight();
         });
        }
 
@@ -1021,12 +961,12 @@ export default class MREBlackjack {
         stayButtonBehavior.onHover('enter', () => {
             this.stayButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.02, y: 0.02, z: 0.02 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
         });
         stayButtonBehavior.onHover('exit', () => {
             this.stayButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.01, y: 0.01, z: 0.01 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
         });
 
         // When deal button is clicked trigger deal action.
