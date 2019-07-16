@@ -852,11 +852,17 @@ export default class MREBlackjack {
             if (game.getState().stage === 'player-turn-right'){
                 this.hitButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.hit("right"));
+                if(game.getState().stage === 'player-turn-left' && game.getState().handInfo.left.availableActions === undefined){
+                    console.log('hey')
+                    game.setState({stage: 'done'});
+                }
                 this.rootActor.destroy();
                 this.createRootActor();
                 this.createPlayerCards();
                 this.createDealerCards();
+                console.log(game.getState().stage)
                 this.displayWinnerRight();
+                
             } else if (game.getState().stage === 'player-turn-left'){
                 this.hitButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.hit({ position : 'left' }));
@@ -887,8 +893,10 @@ export default class MREBlackjack {
     // When hit button is clicked trigger game dispatch to hit
         newRoundButtonBehavior.onClick(() => {
             game.setState({stage: 'ready'});
+            game.dispatch(actions.restore());
             this.rootActor.destroy();
             this.createRootActor();
+            // console.log(game.getState())
     });
 
        }
@@ -915,7 +923,7 @@ export default class MREBlackjack {
     });
 
        }
-
+ 
        private doubleDownAnimation() {
 
         const doubleDownButtonBehavior = this.doubleDownButton.setBehavior(ButtonBehavior);
@@ -971,6 +979,7 @@ export default class MREBlackjack {
             this.createDealerCards();
             this.displayWinnerRight();
             // console.log(game.getState())
+            
         });
        }
 
@@ -1000,12 +1009,16 @@ export default class MREBlackjack {
             if(game.getState().stage === 'player-turn-right'){
                 this.stayButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.stand('right'));
+                if(game.getState().stage === 'player-turn-left' && game.getState().handInfo.left.availableActions === undefined){
+                    console.log('hey')
+                    game.setState({stage: 'done'});
+                }
                 this.rootActor.destroy();
                 this.createRootActor();
                 this.createDealerCards();
                 this.createPlayerCards();
                 this.displayWinnerRight();
-  
+                // console.log(game.getState())
                
             } else if (game.getState().stage === 'player-turn-left'){
                 this.stayButton.enableAnimation('DoAFlip');
@@ -1016,6 +1029,7 @@ export default class MREBlackjack {
                 this.createPlayerCards();
                 this.displayWinnerRight();
                 this.displayWinnerLeft();
+                // console.log(game.getState())
            
             }
           
