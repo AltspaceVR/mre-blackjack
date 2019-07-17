@@ -31,12 +31,12 @@ import { ENGINE_METHOD_ALL } from 'constants';
 
 
 
-interface cardJSON{
-    text:string,
-    suite:string,
-    value: number,
-    color:string,
-    material?: Material
+interface CardJSON{
+    text: string;
+    suite: string;
+    value: number;
+    color: string;
+    material?: Material;
 }
 
 
@@ -98,66 +98,63 @@ export default class MREBlackjack {
 
     private rightHandArray: Array<ForwardPromise<Actor>> = [];
     private leftHandArray: Array<ForwardPromise<Actor>> = [];
-    
+
     private cardTextures: Array<ForwardPromise<Texture>> = [];
     private cardMateriels: Array<ForwardPromise<Material>> = [];
     private cardTextureSheet: Texture;
 
-
-    private JSON: Array<cardJSON> = [ { "text": "2", "suite": "spades", "value": 2, "color": "B" },
-    { "text": "3", "suite": "spades", "value": 3, "color": "B" },
-    { "text": "4", "suite": "spades", "value": 4, "color": "B" },
-    { "text": "5", "suite": "spades", "value": 5, "color": "B" },
-    { "text": "6", "suite": "spades", "value": 6, "color": "B" },
-    { "text": "7", "suite": "spades", "value": 7, "color": "B" },
-    { "text": "8", "suite": "spades", "value": 8, "color": "B" },
-    { "text": "9", "suite": "spades", "value": 9, "color": "B" },
-    { "text": "10", "suite": "spades", "value": 10, "color": "B" },
-    { "text": "J", "suite": "spades", "value": 10, "color": "B" },
-    { "text": "Q", "suite": "spades", "value": 10, "color": "B" },
-    { "text": "K", "suite": "spades", "value": 10, "color": "B" },
-    { "text": "A", "suite": "spades", "value": 1, "color": "B" },
-    { "text": "2", "suite": "hearts", "value": 2, "color": "R" },
-    { "text": "3", "suite": "hearts", "value": 3, "color": "R" },
-    { "text": "4", "suite": "hearts", "value": 4, "color": "R" },
-    { "text": "5", "suite": "hearts", "value": 5, "color": "R" },
-    { "text": "6", "suite": "hearts", "value": 6, "color": "R" },
-    { "text": "7", "suite": "hearts", "value": 7, "color": "R" },
-    { "text": "8", "suite": "hearts", "value": 8, "color": "R" },
-    { "text": "9", "suite": "hearts", "value": 9, "color": "R" },
-    { "text": "10", "suite": "hearts", "value": 10, "color": "R" },
-    { "text": "J", "suite": "hearts", "value": 10, "color": "R" },
-    { "text": "Q", "suite": "hearts", "value": 10, "color": "R" },
-    { "text": "K", "suite": "hearts", "value": 10, "color": "R" },
-    { "text": "A", "suite": "hearts", "value": 1, "color": "R" },
-    { "text": "2", "suite": "clubs", "value": 2, "color": "B" },
-    { "text": "3", "suite": "clubs", "value": 3, "color": "B" },
-    { "text": "4", "suite": "clubs", "value": 4, "color": "B" },
-    { "text": "5", "suite": "clubs", "value": 5, "color": "B" },
-    { "text": "6", "suite": "clubs", "value": 6, "color": "B" },
-    { "text": "7", "suite": "clubs", "value": 7, "color": "B" },
-    { "text": "8", "suite": "clubs", "value": 8, "color": "B" },
-    { "text": "9", "suite": "clubs", "value": 9, "color": "B" },
-    { "text": "10", "suite": "clubs", "value": 10, "color": "B" },
-    { "text": "J", "suite": "clubs", "value": 10, "color": "B" },
-    { "text": "Q", "suite": "clubs", "value": 10, "color": "B" },
-    { "text": "K", "suite": "clubs", "value": 10, "color": "B" },
-    { "text": "A", "suite": "clubs", "value": 1, "color": "B" },
-    { "text": "2", "suite": "diamonds", "value": 2, "color": "R" },
-    { "text": "3", "suite": "diamonds", "value": 3, "color": "R" },
-    { "text": "4", "suite": "diamonds", "value": 4, "color": "R" },
-    { "text": "5", "suite": "diamonds", "value": 5, "color": "R" },
-    { "text": "6", "suite": "diamonds", "value": 6, "color": "R" },
-    { "text": "7", "suite": "diamonds", "value": 7, "color": "R" },
-    { "text": "8", "suite": "diamonds", "value": 8, "color": "R" },
-    { "text": "9", "suite": "diamonds", "value": 9, "color": "R" },
-    { "text": "10", "suite": "diamonds", "value": 10, "color": "R" },
-    { "text": "J", "suite": "diamonds", "value": 10, "color": "R" },
-    { "text": "Q", "suite": "diamonds", "value": 10, "color": "R" },
-    { "text": "K", "suite": "diamonds", "value": 10, "color": "R" },
-    { "text": "A", "suite": "diamonds", "value": 1, "color": "R" }]
-
-    
+    private JSON: CardJSON[] = [ { text: "2", suite: "spades", value: 2, color: "B" },
+    { text: "3", suite: "spades", value: 3, color: "B" },
+    { text: "4", suite: "spades", value: 4, color: "B" },
+    { text: "5", suite: "spades", value: 5, color: "B" },
+    { text: "6", suite: "spades", value: 6, color: "B" },
+    { text: "7", suite: "spades", value: 7, color: "B" },
+    { text: "8", suite: "spades", value: 8, color: "B" },
+    { text: "9", suite: "spades", value: 9, color: "B" },
+    { text: "10", suite: "spades", value: 10, color: "B" },
+    { text: "J", suite: "spades", value: 10, color: "B" },
+    { text: "Q", suite: "spades", value: 10, color: "B" },
+    { text: "K", suite: "spades", value: 10, color: "B" },
+    { text: "A", suite: "spades", value: 1, color: "B" },
+    { text: "2", suite: "hearts", value: 2, color: "R" },
+    { text: "3", suite: "hearts", value: 3, color: "R" },
+    { text: "4", suite: "hearts", value: 4, color: "R" },
+    { text: "5", suite: "hearts", value: 5, color: "R" },
+    { text: "6", suite: "hearts", value: 6, color: "R" },
+    { text: "7", suite: "hearts", value: 7, color: "R" },
+    { text: "8", suite: "hearts", value: 8, color: "R" },
+    { text: "9", suite: "hearts", value: 9, color: "R" },
+    { text: "10", suite: "hearts", value: 10, color: "R" },
+    { text: "J", suite: "hearts", value: 10, color: "R" },
+    { text: "Q", suite: "hearts", value: 10, color: "R" },
+    { text: "K", suite: "hearts", value: 10, color: "R" },
+    { text: "A", suite: "hearts", value: 1, color: "R" },
+    { text: "2", suite: "clubs", value: 2, color: "B" },
+    { text: "3", suite: "clubs", value: 3, color: "B" },
+    { text: "4", suite: "clubs", value: 4, color: "B" },
+    { text: "5", suite: "clubs", value: 5, color: "B" },
+    { text: "6", suite: "clubs", value: 6, color: "B" },
+    { text: "7", suite: "clubs", value: 7, color: "B" },
+    { text: "8", suite: "clubs", value: 8, color: "B" },
+    { text: "9", suite: "clubs", value: 9, color: "B" },
+    { text: "10", suite: "clubs", value: 10, color: "B" },
+    { text: "J", suite: "clubs", value: 10, color: "B" },
+    { text: "Q", suite: "clubs", value: 10, color: "B" },
+    { text: "K", suite: "clubs", value: 10, color: "B" },
+    { text: "A", suite: "clubs", value: 1, color: "B" },
+    { text: "2", suite: "diamonds", value: 2, color: "R" },
+    { text: "3", suite: "diamonds", value: 3, color: "R" },
+    { text: "4", suite: "diamonds", value: 4, color: "R" },
+    { text: "5", suite: "diamonds", value: 5, color: "R" },
+    { text: "6", suite: "diamonds", value: 6, color: "R" },
+    { text: "7", suite: "diamonds", value: 7, color: "R" },
+    { text: "8", suite: "diamonds", value: 8, color: "R" },
+    { text: "9", suite: "diamonds", value: 9, color: "R" },
+    { text: "10", suite: "diamonds", value: 10, color: "R" },
+    { text: "J", suite: "diamonds", value: 10, color: "R" },
+    { text: "Q", suite: "diamonds", value: 10, color: "R" },
+    { text: "K", suite: "diamonds", value: 10, color: "R" },
+    { text: "A", suite: "diamonds", value: 1, color: "R" }]
 
     constructor(private context: Context, private baseUrl: string) {
         this.context.onStarted(() => this.started());
@@ -168,8 +165,6 @@ export default class MREBlackjack {
      * This method will intialize the majority of the create actor methods as well as the animations and behaviors of said actors.
      */
     private async started() {
-
-        
             // Call the functions with forwarded promises here
         await Promise.all([
 
@@ -286,7 +281,6 @@ export default class MREBlackjack {
                             }
                         }
                     });
-                    // game.setState({stage: 'ready'});
 
 // tslint:disable-next-line: max-line-length
                 } else if (game.getState().handInfo.right.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.right.playerValue.hi > game.getState().dealerValue.hi ){
@@ -307,7 +301,25 @@ export default class MREBlackjack {
                             }
                         }
                     });
-                    // game.setState({stage: 'ready'});
+                } else if (game.getState().handInfo.right.playerValue.hi === game.getState().dealerValue.hi){
+
+                    Actor.CreateEmpty(this.context, {
+                        actor: {
+                            parentId: this.rootActor.id,
+                            name: 'PUSH RIGHT',
+                            transform: {
+                                // Positions the text
+                                app: { position: { x: 0.5, y: -0.2, z: 0 } }
+                            },
+                            // Here we're configuring the properties of the displayed text.
+                            text: {
+                                contents: "PUSH RIGHT",
+                                anchor: TextAnchorLocation.MiddleCenter,
+                                color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                                height: 0.1,
+                            }
+                        }
+                    });
                 }
             }
     }
@@ -324,7 +336,7 @@ export default class MREBlackjack {
                         name: 'dealer win',
                         transform: {
                             // Positions the text
-                            app: { position: { x: -0.5, y: 1, z: 0 } }
+                            app: { position: { x: -0.5, y: -0.2, z: 0 } }
                         },
                         // Here we're configuring the properties of the displayed text.
                         text: {
@@ -345,7 +357,7 @@ export default class MREBlackjack {
                         name: 'player win',
                         transform: {
                             // Positions the text
-                            app: { position: { x: -0.5, y: 1, z: 0 } }
+                            app: { position: { x: -0.5, y: -0.2, z: 0 } }
                         },
                         // Here we're configuring the properties of the displayed text.
                         text: {
@@ -356,8 +368,25 @@ export default class MREBlackjack {
                         }
                     }
                 });
-                // game.setState({stage: 'ready'});
             }
+        } else if ( game.getState().handInfo.left.playerValue.hi === game.getState().dealerValue.hi){
+            Actor.CreateEmpty(this.context, {
+                actor: {
+                    parentId: this.rootActor.id,
+                    name: 'PUSH left',
+                    transform: {
+                        // Positions the text
+                        app: { position: { x: -0.5, y: -0.2, z: 0 } }
+                    },
+                    // Here we're configuring the properties of the displayed text.
+                    text: {
+                        contents: "PUSH LEFT",
+                        anchor: TextAnchorLocation.MiddleCenter,
+                        color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                        height: 0.1,
+                    }
+                }
+            });
         }
 }
     /**
@@ -384,7 +413,8 @@ export default class MREBlackjack {
                 // Parent the glTF model to the text actor.
                 light: {
                     enabled: true,
-                    intensity: 6,
+                    intensity: 5,
+                    range: 10
                 }
             }
         });
@@ -698,6 +728,7 @@ export default class MREBlackjack {
                 transform: {
                     local: {
                         scale: { x: 0.2, y: 1, z: 0.2 },
+                        // tslint:disable-next-line: max-line-length
                         position: {  x: rightCardPositionX, y: this.playerOneHandAnchor().y + rightCardPositionY, z:  this.playerOneHandAnchor().z - rightCardPositionZ },
                         rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                     }
@@ -705,23 +736,16 @@ export default class MREBlackjack {
                 appearance: {
                     materialId: rightHandArray[card].material.id
                 }
-               
             }
         });
-            rightCardPositionX -= 0.1;
-            rightCardPositionY += 0.01
-            rightCardPositionZ -= 0.1;
-            this.rightHandArray.push(rightPlayerCard);
-            
-        console.log(this.playerOneHandAnchor().x)
-            
-            
+           rightCardPositionX -= 0.1;
+           rightCardPositionY += 0.01
+           rightCardPositionZ -= 0.1;
+           this.rightHandArray.push(rightPlayerCard);
         }
 
-        if(leftHandArray !== undefined){
-            
+        if (leftHandArray !== undefined){
             for(let card = 0; card < leftHandArray.length; card++){
- 
                // Load a glTF model
                 let leftPlayerCard = Actor.CreatePrimitive(this.context, {
                 // at the given URL
@@ -735,6 +759,7 @@ export default class MREBlackjack {
                     transform: {
                         local: {
                             scale: { x: 0.2, y: 1, z: 0.2 },
+                            // tslint:disable-next-line: max-line-length
                             position: {  x: leftCardPositionX, y:  this.playerOneHandAnchor().y + leftCardPositionY, z:   this.playerOneHandAnchor().z + leftCardPositionZ },
                             rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                         }
@@ -750,9 +775,7 @@ export default class MREBlackjack {
                 this.leftHandArray.push(leftPlayerCard);
             }
         }
-        
         this.createDeckIndicator();
-        //Dealer_Hand
     }
 
 /**
@@ -774,6 +797,7 @@ export default class MREBlackjack {
                     // Parent the glTF model to the text actor.
                     transform: {
                         local: {
+                            // tslint:disable-next-line: max-line-length
                             position: {x: this.rightHandArray[0].value.transform.app.position.x + 0.1, y: -0.4, z: this.rightHandArray[0].value.transform.app.position.z},
                             scale: { x: 1, y: 1, z: 1 },
                             rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
@@ -781,7 +805,7 @@ export default class MREBlackjack {
                     }
                 }
             });
-        }else if(game.getState().stage === 'player-turn-left'){
+        } else if(game.getState().stage === 'player-turn-left'){
 
             Actor.CreateFromGltf(this.context, {
                 // at the given URL
@@ -1018,8 +1042,6 @@ export default class MREBlackjack {
                 this.createDealerCards();
                 this.createPlayerCards();
                 this.displayWinnerRight();
-                // console.log(game.getState())
-               
             } else if (game.getState().stage === 'player-turn-left'){
                 this.stayButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.stand({ position : 'left' }));
@@ -1030,10 +1052,7 @@ export default class MREBlackjack {
                 this.displayWinnerRight();
                 this.displayWinnerLeft();
                 // console.log(game.getState())
-           
             }
-          
-    
         });
 
        }
