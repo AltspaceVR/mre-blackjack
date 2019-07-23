@@ -80,18 +80,18 @@ export default class MREBlackjack {
     // Here, we're creating null anctors. We'll set the values of the forwarded promises of the created GLTFs to these variables for reference.
     private rootActor: Actor;
     private lightActor: Actor;
-    private hitLabel: Actor;
     private hitButton: Actor;
     private dealLabel: Actor;
     private dealButton: Actor;
-    private stayLabel: Actor;
+
     private stayButton: Actor;
-    private newRoundLabel: Actor;
-    private newRoundButton: Actor;
-    private doubleDownLabel: Actor;
+
     private doubleDownButton: Actor;
-    private splitLabel: Actor;
+
     private splitButton: Actor;
+    private yesButton: Actor;
+    private noButton: Actor;
+    private roundText: Actor;
 
     private desk: Actor;
 // tslint:disable-next-line: max-line-length
@@ -179,7 +179,6 @@ export default class MREBlackjack {
             this.createStayButton(),
             this.createDesk(),
             this.createRootActor(),
-            this.createNewRoundButton(),
             this.createSplitButton(),
             this.createDeckIndicator(),
             this.createDoubleDownButton(),
@@ -195,9 +194,9 @@ export default class MREBlackjack {
         this.hitAnimation();
         this.dealAnimation();
         this.stayAnimation();
-        this.newRoundAnimation();
         this.splitAnimation();
         this.doubleDownAnimation();
+        this.newRoundAnimation();
 
         for(let i = 0; i < 52; i++){
             this.JSON[i].material = this.cardMateriels[i].value;
@@ -264,7 +263,7 @@ export default class MREBlackjack {
 
     private async loadSound(){
 
-        let sound = this.context.assetManager.createSound('blackjack_lose', {
+        let sound = this.context.assetManager.createSound('blackjack_win', {
             uri: `${this.baseUrl}/CAABlackJackWin.wav`
         })
 
@@ -297,7 +296,7 @@ export default class MREBlackjack {
                             }
                         }
                     });
-
+                    this.newRound();
 // tslint:disable-next-line: max-line-length
                 } else if (game.getState().handInfo.right.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.right.playerValue.hi > game.getState().dealerValue.hi ){
                     Actor.CreateEmpty(this.context, {
@@ -317,9 +316,7 @@ export default class MREBlackjack {
                             }
                         }
                     });
-                   let soundInstance = new SoundInstance(this.rootActor, this.blackJackWin.id)
-
-                   soundInstance.setSoundState({}, SoundCommand.Start)
+                    this.newRound();
                 } else if (game.getState().handInfo.right.playerValue.hi === game.getState().dealerValue.hi){
 
                     Actor.CreateEmpty(this.context, {
@@ -339,7 +336,9 @@ export default class MREBlackjack {
                             }
                         }
                     });
+                    this.newRound();
                 }
+                
             }
     }
 
@@ -367,6 +366,7 @@ export default class MREBlackjack {
                     }
                 });
                 // game.setState({stage: 'ready'});
+                this.newRound();
 
 // tslint:disable-next-line: max-line-length
             } else if (game.getState().handInfo.left.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.left.playerValue.hi > game.getState().dealerValue.hi ){
@@ -387,6 +387,7 @@ export default class MREBlackjack {
                         }
                     }
                 });
+                this.newRound();
             }
         } else if ( game.getState().handInfo.left.playerValue.hi === game.getState().dealerValue.hi){
             Actor.CreateEmpty(this.context, {
@@ -406,6 +407,7 @@ export default class MREBlackjack {
                     }
                 }
             });
+            this.newRound();
         }
 }
     /**
@@ -439,6 +441,70 @@ export default class MREBlackjack {
         });
         this.lightActor = lightActorPromise.value;
     }
+
+
+    private async newRound(){
+
+        const roundTextPromise = Actor.CreateEmpty(this.context, {
+            actor: {
+                name: 'New Round?',
+                transform: {
+                    app: { position: { x: 1, y: -0.8, z: -0.9 } }
+                },
+                text: {
+                    contents: "Play Again?",
+                    anchor: TextAnchorLocation.MiddleCenter,
+                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
+                    height: 0.1,
+                }
+            }
+        });
+        
+        this.roundText = roundTextPromise.value;
+
+        // Load a glTF model
+        const yesButtonPromise = Actor.CreateFromGltf(this.context, {
+        // at the given URL
+        resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Yes.glb`,
+        // and spawn box colliders around the meshes.
+        colliderType: 'box',
+        // Also apply the following generic actor properties.
+        actor: {
+            parentId: this.roundText.id,
+            name: 'New Round',
+            // Parent the glTF model to the text actor.
+            transform: {
+                local: {
+                    scale: { x: 1, y: 1, z: 1 },
+                    rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
+                }
+            }
+        }
+    });
+
+        this.yesButton = yesButtonPromise.value;
+
+        const noButtonPromise = Actor.CreateFromGltf(this.context, {
+            // at the given URL
+            resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Yes.glb`,
+            // and spawn box colliders around the meshes.
+            colliderType: 'box',
+            // Also apply the following generic actor properties.
+            actor: {
+                name: 'New Round',
+                // Parent the glTF model to the text actor.
+                transform: {
+                    local: {
+                        scale: { x: 1, y: 1, z: 1 },
+                        rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
+                    }
+                }
+            }
+        });
+    
+            this.noButton = noButtonPromise.value;
+
+    }
     private async createHitButton() {
 
 
@@ -456,8 +522,8 @@ export default class MREBlackjack {
                 transform: {
                     local: {
                         scale: { x: 0.5, y: 0.5, z: 0.5 },
-                        rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
-                        position: { x: 0.5, y: -0.7, z: -0.5 }
+                        rotation: Quaternion.FromEulerAngles(100, -Math.PI, 0),
+                        position: { x: 0.5, y: -0.8, z: -0.8 }
                     }
                 }
             }
@@ -480,8 +546,8 @@ export default class MREBlackjack {
                 transform: {
                     local: {
                         scale: { x: 0.5, y: 0.5, z: 0.5 },
-                        rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
-                        position: { x: 0.5, y: -0.8, z: -0.5 }
+                        rotation: Quaternion.FromEulerAngles(100, -Math.PI, 0),
+                        position: { x: 0.5, y: -0.9, z: -0.8 }
                     }
                 }
             }
@@ -504,8 +570,8 @@ export default class MREBlackjack {
                 transform: {
                     local: {
                         scale: { x: 0.5, y: 0.5, z: 0.5 },
-                        rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
-                        position: { x: 0.6, y: -0.7, z: -0.5 }
+                        rotation: Quaternion.FromEulerAngles(100, -Math.PI, 0),
+                        position: { x: 0.6, y: -0.8, z: -0.8 }
                     }
                 }
             }
@@ -516,86 +582,30 @@ export default class MREBlackjack {
 
     private async createDealButton() {
 
-        const dealLabelPromise = Actor.CreateEmpty(this.context, {
-            actor: {
-                name: 'Text',
-                transform: {
-                    app: { position: { x: 0.5, y: -0.8, z: -0.9 } }
-                },
-                text: {
-                    contents: "Deal",
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.1,
-                }
-            }
-        });
 
-        this.dealLabel = dealLabelPromise.value;
+
 
         // Load a glTF model
         const dealButtonPromise = Actor.CreateFromGltf(this.context, {
         // at the given URL
-        resourceUrl: `${this.baseUrl}/card-button.glb`,
+        resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Join.glb`,
         // and spawn box colliders around the meshes.
         colliderType: 'box',
         // Also apply the following generic actor properties.
         actor: {
             name: 'Deal Button',
             // Parent the glTF model to the text actor.
-            parentId: this.dealLabel.id,
             transform: {
                 local: {
-                    scale: { x: 0.005, y: 0.005, z: 0.005 },
-                    rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                    scale: { x: 1, y: 1, z: 1},
+                    rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
+                    position: { x: 0, y: -0.8, z: -0.9 }
                 }
             }
         }
     });
 
         this.dealButton = dealButtonPromise.value;
-    }
-
-    private async createNewRoundButton() {
-
-        const newRoundLabelPromise = Actor.CreateEmpty(this.context, {
-            actor: {
-                name: 'Text',
-                transform: {
-                    app: { position: { x: 1, y: -0.8, z: -0.9 } }
-                },
-                text: {
-                    contents: "New Round",
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.1,
-                }
-            }
-        });
-
-        this.newRoundLabel = newRoundLabelPromise.value;
-
-        // Load a glTF model
-        const newRoundButtonPromise = Actor.CreateFromGltf(this.context, {
-        // at the given URL
-        resourceUrl: `${this.baseUrl}/card-button.glb`,
-        // and spawn box colliders around the meshes.
-        colliderType: 'box',
-        // Also apply the following generic actor properties.
-        actor: {
-            name: 'New Round',
-            // Parent the glTF model to the text actor.
-            parentId: this.newRoundLabel.id,
-            transform: {
-                local: {
-                    scale: { x: 0.005, y: 0.005, z: 0.005 },
-                    rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
-                }
-            }
-        }
-    });
-
-        this.newRoundButton = newRoundButtonPromise.value;
     }
 
     private async createDealerCards() {
@@ -640,8 +650,8 @@ export default class MREBlackjack {
                 transform: {
                     local: {
                         scale: { x: 0.5, y: 0.5, z: 0.5 },
-                        rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
-                        position: { x: 0.6, y: -0.8, z: -0.5 }
+                        rotation: Quaternion.FromEulerAngles(100, -Math.PI, 0),
+                        position: { x: 0.6, y: -0.9, z: -0.8 }
                     }
                 }
             }
@@ -845,27 +855,6 @@ export default class MREBlackjack {
 
        }
 
-       private newRoundAnimation() {
-        const newRoundButtonBehavior = this.newRoundButton.setBehavior(ButtonBehavior);
-    // Trigger the grow/shrink animations on hover.
-        newRoundButtonBehavior.onHover('enter', () => {
-        this.newRoundButton.animateTo(
-            { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
-    });
-        newRoundButtonBehavior.onHover('exit', () => {
-        this.newRoundButton.animateTo(
-            { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
-    });
-
-    // Resets the game stage back to READY in order to start a new round.
-        newRoundButtonBehavior.onClick(() => {
-            game.setState({stage: 'ready'});
-            game.dispatch(actions.restore());
-            this.rootActor.destroy();
-            this.createRootActor();
-    });
-
-       }
 
        private splitAnimation() {
 
@@ -913,8 +902,43 @@ export default class MREBlackjack {
     });
 
        }
+
+      private newRoundAnimation(){
+
+        
+        const newRoundBehavior = this.yesButton.setBehavior(ButtonBehavior);
+
+        newRoundBehavior.onHover('enter', () => {
+            this.yesButton.animateTo(
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 1, y: 1, z: 1 } } } }, 1, AnimationEaseCurves.EaseOutSine);
+        });
+        newRoundBehavior.onHover('exit', () => {
+            this.yesButton.animateTo(
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 1, y: 1, z: 1 } } } }, 1, AnimationEaseCurves.EaseOutSine);
+        });
+
+        // When deal button is clicked trigger DEAL action.
+        newRoundBehavior.onClick(() => {
+
+            game.setState({stage: 'ready'});
+            game.dispatch(actions.restore());
+            this.rootActor.destroy();
+            this.createRootActor();
+
+            if (game.getState().deck.length === 0) {
+                game.setState({deck: this.shuffle(this.JSON)});
+            }
+            game.dispatch(actions.deal());
+            this.createPlayerCards();
+            this.createDealerCards();
+            this.displayWinnerRight();
+            this.roundText.destroy();
+        });
+
+      }
       private dealAnimation() {
-        this.dealLabel.enableAnimation('Spin');
 
         // Button behaviors have two pairs of events: hover start/stop, and click start/stop.
 
@@ -923,25 +947,30 @@ export default class MREBlackjack {
         dealbuttonBehavior.onHover('enter', () => {
             this.dealButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 1, y: 1, z: 1 } } } }, 1, AnimationEaseCurves.EaseOutSine);
         });
         dealbuttonBehavior.onHover('exit', () => {
             this.dealButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 1, y: 1, z: 1 } } } }, 1, AnimationEaseCurves.EaseOutSine);
         });
 
         // When deal button is clicked trigger DEAL action.
         dealbuttonBehavior.onClick(() => {
 
+            game.setState({stage: 'ready'});
+            game.dispatch(actions.restore());
+            this.rootActor.destroy();
+            this.createRootActor();
+
             if (game.getState().deck.length === 0) {
                 game.setState({deck: this.shuffle(this.JSON)});
             }
-            this.dealButton.enableAnimation('DoAFlip');
             game.dispatch(actions.deal());
             this.createPlayerCards();
             this.createDealerCards();
             this.displayWinnerRight();
+            this.dealButton.destroy();
         });
        }
 
