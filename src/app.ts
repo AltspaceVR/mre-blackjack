@@ -196,7 +196,7 @@ export default class MREBlackjack {
         this.stayAnimation();
         this.splitAnimation();
         this.doubleDownAnimation();
-        this.newRoundAnimation();
+        
 
         for(let i = 0; i < 52; i++){
             this.JSON[i].material = this.cardMateriels[i].value;
@@ -449,7 +449,7 @@ export default class MREBlackjack {
             actor: {
                 name: 'New Round?',
                 transform: {
-                    app: { position: { x: 1, y: -0.8, z: -0.9 } }
+                    app: { position: { x: 0, y: -0.7, z: -0.7 } }
                 },
                 text: {
                     contents: "Play Again?",
@@ -475,7 +475,7 @@ export default class MREBlackjack {
             // Parent the glTF model to the text actor.
             transform: {
                 local: {
-                    scale: { x: 1, y: 1, z: 1 },
+                    scale: { x: 0.8, y: 1, z: 1.1    },
                     rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
                 }
             }
@@ -484,25 +484,7 @@ export default class MREBlackjack {
 
         this.yesButton = yesButtonPromise.value;
 
-        const noButtonPromise = Actor.CreateFromGltf(this.context, {
-            // at the given URL
-            resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Yes.glb`,
-            // and spawn box colliders around the meshes.
-            colliderType: 'box',
-            // Also apply the following generic actor properties.
-            actor: {
-                name: 'New Round',
-                // Parent the glTF model to the text actor.
-                transform: {
-                    local: {
-                        scale: { x: 1, y: 1, z: 1 },
-                        rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
-                    }
-                }
-            }
-        });
-    
-            this.noButton = noButtonPromise.value;
+        this.newRoundAnimation();
 
     }
     private async createHitButton() {
