@@ -915,7 +915,7 @@ export default class MREBlackjack {
             this.rootActor.destroy();
             this.createRootActor();
 
-            if (game.getState().deck.length === 0) {
+            if (game.getState().deck.length < 5) {
                 game.setState({deck: this.shuffle(this.JSON)});
             }
             game.dispatch(actions.deal());
