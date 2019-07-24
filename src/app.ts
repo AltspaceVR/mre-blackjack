@@ -297,6 +297,7 @@ export default class MREBlackjack {
                         }
                     });
                     this.newRound();
+                    this.newRoundAnimation();
 // tslint:disable-next-line: max-line-length
                 } else if (game.getState().handInfo.right.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.right.playerValue.hi > game.getState().dealerValue.hi ){
                     Actor.CreateEmpty(this.context, {
@@ -317,6 +318,7 @@ export default class MREBlackjack {
                         }
                     });
                     this.newRound();
+                    this.newRoundAnimation();
                 } else if (game.getState().handInfo.right.playerValue.hi === game.getState().dealerValue.hi){
 
                     Actor.CreateEmpty(this.context, {
@@ -337,6 +339,7 @@ export default class MREBlackjack {
                         }
                     });
                     this.newRound();
+                    this.newRoundAnimation();
                 }
                 
             }
@@ -367,6 +370,7 @@ export default class MREBlackjack {
                 });
                 // game.setState({stage: 'ready'});
                 this.newRound();
+                this.newRoundAnimation();
 
 // tslint:disable-next-line: max-line-length
             } else if (game.getState().handInfo.left.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.left.playerValue.hi > game.getState().dealerValue.hi ){
@@ -388,6 +392,7 @@ export default class MREBlackjack {
                     }
                 });
                 this.newRound();
+                this.newRoundAnimation();
             }
         } else if ( game.getState().handInfo.left.playerValue.hi === game.getState().dealerValue.hi){
             Actor.CreateEmpty(this.context, {
@@ -408,6 +413,7 @@ export default class MREBlackjack {
                 }
             });
             this.newRound();
+            this.newRoundAnimation();
         }
 }
     /**
@@ -447,6 +453,7 @@ export default class MREBlackjack {
 
         const roundTextPromise = Actor.CreateEmpty(this.context, {
             actor: {
+                parentId: this.rootActor.id,
                 name: 'New Round?',
                 transform: {
                     app: { position: { x: 0, y: -0.7, z: -0.7 } }
@@ -484,7 +491,6 @@ export default class MREBlackjack {
 
         this.yesButton = yesButtonPromise.value;
 
-        this.newRoundAnimation();
 
     }
     private async createHitButton() {
@@ -916,7 +922,7 @@ export default class MREBlackjack {
             this.createPlayerCards();
             this.createDealerCards();
             this.displayWinnerRight();
-            this.roundText.destroy();
+            
         });
 
       }
