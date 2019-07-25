@@ -8,7 +8,7 @@ import {
     AnimationEaseCurves,
     AnimationKeyframe,
     AnimationWrapMode,
-    AssetGroup,
+    AssetContainer,
     ButtonBehavior,
     Context,
     PrimitiveShape,
@@ -16,16 +16,12 @@ import {
     TextAnchorLocation,
     Vector3,
     RigidBody,
-    ForwardPromise,
     Plane,
     Sound,
     Asset,
     Material,
-    AssetManager,
     Texture,
     Text,
-    SoundInstance,
-    SoundCommand,
 } from '@microsoft/mixed-reality-extension-sdk';
 import { platform } from 'os';
 import { ENGINE_METHOD_ALL } from 'constants';
@@ -97,12 +93,12 @@ export default class MREBlackjack {
 // tslint:disable-next-line: max-line-length
     // Same concept as before only this time using an an array, we want to put the actors into an array so that it will be easier to add behaviors to all of the actors later.
 
-    private rightHandArray: Array<ForwardPromise<Actor>> = [];
-    private leftHandArray: Array<ForwardPromise<Actor>> = [];
+    private rightHandArray: Array<Actor> = [];
+    private leftHandArray: Array<Actor> = [];
     
 
-    private cardTextures: Array<ForwardPromise<Texture>> = [];
-    private cardMateriels: Array<ForwardPromise<Material>> = [];
+    private cardTextures: Array<Texture> = [];
+    private cardMateriels: Array<Material> = [];
     private cardTextureSheet: Texture;
     // Here we're creating an array JSON data that corresponds to cards in a deck.
     // The reason that this array is in JSON format is because the NPM package that we're using generates card data in this format.
@@ -162,8 +158,9 @@ export default class MREBlackjack {
 
     private blackJackWin: Sound
 
-    constructor(private context: Context, private baseUrl: string) {
+    constructor(private context: Context, private baseUrl: string, private assets: AssetContainer) {
         this.context.onStarted(() => this.started());
+        this.assets = new AssetContainer(this.context);
     }
 
     /**
@@ -199,7 +196,7 @@ export default class MREBlackjack {
         
 
         for(let i = 0; i < 52; i++){
-            this.JSON[i].material = this.cardMateriels[i].value;
+            this.JSON[i].material = this.cardMateriels[i];
         }
         game.setState({deck: this.shuffle(this.JSON)});
     }
@@ -207,19 +204,19 @@ export default class MREBlackjack {
 
     private playerOneHandAnchor(Vector3?: Vector3){
 
-        return this.desk.children[0].findChildrenByName('P1_Hand', false)[0].transform.app.position
+        return this.desk.children[0].findChildrenByName('P1_Hand', false)[0].transform.app.position;
 
     }
 
     private dealerHandAnchor(Vector3?: Vector3){
 
-        return this.desk.children[0].findChildrenByName('Dealer_Hand', false)[0].transform.app.position
+        return this.desk.children[0].findChildrenByName('Dealer_Hand', false)[0].transform.app.position;
 
     }
 
     private playerPotAnchor(Vector3?: Vector3){
 
-        return this.desk.children[0].findChildrenByName('P1_Pot', false)[0].transform.app.position
+        return this.desk.children[0].findChildrenByName('P1_Pot', false)[0].transform.app.position;
 
     }
 
@@ -243,7 +240,7 @@ export default class MREBlackjack {
             for (let cardColumn = 0; cardColumn < 9; cardColumn++){
                 let posX = 15 + (16 + 210) * cardColumn;
                 let posY = 2048 - (283 + 50) * (cardRow + 1);
-                this.cardMateriels.push(this.context.assetManager.createMaterial('cardMaterial',{
+                this.cardMateriels.push(this.assets.createMaterial('cardMaterial',{
                     mainTextureId: this.cardTextureSheet.id,
                     mainTextureOffset: {x:  posX / 2048, y: posY / 2048},
                     mainTextureScale: {x: .1, y: .134}, //1/14
@@ -254,20 +251,17 @@ export default class MREBlackjack {
 
       }
       private async loadCardTextures() {
-        const cardTexturePromise =  this.context.assetManager.createTexture('card', {
+        const cardTexturePromise =  this.assets.createTexture('card', {
             uri: `${this.baseUrl}/card-texture-sheet.png`,
             // resolution: {x: 2048, y: 2048}
         });
-        this.cardTextureSheet = cardTexturePromise.value;
+        this.cardTextureSheet = cardTexturePromise;
     }
 
     private async loadSound(){
 
-        let sound = this.context.assetManager.createSound('blackjack_win', {
-            uri: `${this.baseUrl}/CAABlackJackWin.wav`
-        })
-
-        this.blackJackWin = sound.value
+        this.blackJackWin = this.assets.createSound('blackjackwin', { uri: '${this.baseUrl}/CAABlackJackWin.wav' });
+        
     }
     /**
      * This method will be called every time the Dealer DEALS or the User HITS or STANDS.
@@ -297,6 +291,7 @@ export default class MREBlackjack {
                         }
                     });
                     this.newRound();
+                    this.newRoundAnimation();
 // tslint:disable-next-line: max-line-length
                 } else if (game.getState().handInfo.right.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.right.playerValue.hi > game.getState().dealerValue.hi ){
                     Actor.CreateEmpty(this.context, {
@@ -316,7 +311,9 @@ export default class MREBlackjack {
                             }
                         }
                     });
+                    this.rootActor.startSound(this.blackJackWin.id, { /* options */ });
                     this.newRound();
+                    this.newRoundAnimation();
                 } else if (game.getState().handInfo.right.playerValue.hi === game.getState().dealerValue.hi){
 
                     Actor.CreateEmpty(this.context, {
@@ -337,6 +334,7 @@ export default class MREBlackjack {
                         }
                     });
                     this.newRound();
+                    this.newRoundAnimation();
                 }
                 
             }
@@ -367,6 +365,7 @@ export default class MREBlackjack {
                 });
                 // game.setState({stage: 'ready'});
                 this.newRound();
+                this.newRoundAnimation();
 
 // tslint:disable-next-line: max-line-length
             } else if (game.getState().handInfo.left.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.left.playerValue.hi > game.getState().dealerValue.hi ){
@@ -388,6 +387,7 @@ export default class MREBlackjack {
                     }
                 });
                 this.newRound();
+                this.newRoundAnimation();
             }
         } else if ( game.getState().handInfo.left.playerValue.hi === game.getState().dealerValue.hi){
             Actor.CreateEmpty(this.context, {
@@ -408,6 +408,7 @@ export default class MREBlackjack {
                 }
             });
             this.newRound();
+            this.newRoundAnimation();
         }
 }
     /**
@@ -423,7 +424,7 @@ export default class MREBlackjack {
                 // Parent the glTF model to the text actor.
             }
         });
-        this.rootActor = rootActorPromise.value;
+        this.rootActor = rootActorPromise;
     }
 
     private createLightActor() {
@@ -439,7 +440,7 @@ export default class MREBlackjack {
                 }
             }
         });
-        this.lightActor = lightActorPromise.value;
+        this.lightActor = lightActorPromise;
     }
 
 
@@ -447,6 +448,7 @@ export default class MREBlackjack {
 
         const roundTextPromise = Actor.CreateEmpty(this.context, {
             actor: {
+                parentId: this.rootActor.id,
                 name: 'New Round?',
                 transform: {
                     app: { position: { x: 0, y: -0.7, z: -0.7 } }
@@ -460,7 +462,7 @@ export default class MREBlackjack {
             }
         });
         
-        this.roundText = roundTextPromise.value;
+        this.roundText = roundTextPromise;
 
         // Load a glTF model
         const yesButtonPromise = Actor.CreateFromGltf(this.context, {
@@ -482,9 +484,8 @@ export default class MREBlackjack {
         }
     });
 
-        this.yesButton = yesButtonPromise.value;
+        this.yesButton = yesButtonPromise;
 
-        this.newRoundAnimation();
 
     }
     private async createHitButton() {
@@ -510,7 +511,7 @@ export default class MREBlackjack {
                 }
             }
         });
-        this.hitButton = hitButtonPromise.value;
+        this.hitButton = hitButtonPromise;
 
     }
 
@@ -534,7 +535,7 @@ export default class MREBlackjack {
                 }
             }
         });
-        this.stayButton = stayButtonPromise.value;
+        this.stayButton = stayButtonPromise;
 
     }
 
@@ -558,7 +559,7 @@ export default class MREBlackjack {
                 }
             }
         });
-        this.doubleDownButton = doubleDownButtonPromise.value;
+        this.doubleDownButton = doubleDownButtonPromise;
 
     }
 
@@ -587,7 +588,7 @@ export default class MREBlackjack {
         }
     });
 
-        this.dealButton = dealButtonPromise.value;
+        this.dealButton = dealButtonPromise;
     }
 
     private async createDealerCards() {
@@ -638,7 +639,7 @@ export default class MREBlackjack {
                 }
             }
         });
-        this.splitButton = splitButtonPromise.value;
+        this.splitButton = splitButtonPromise;
 
     }
 
@@ -709,7 +710,7 @@ export default class MREBlackjack {
             });
                 leftCardPositionX -= 0.1;
                 leftCardPositionY += 0.01;
-                leftCardPositionZ += 0.1
+                leftCardPositionZ += 0.1;
                 this.leftHandArray.push(leftPlayerCard);
             }
         }
@@ -736,7 +737,7 @@ export default class MREBlackjack {
                     transform: {
                         local: {
                             // tslint:disable-next-line: max-line-length
-                            position: {x: this.rightHandArray[0].value.transform.app.position.x + 0.1, y: -0.4, z: this.rightHandArray[0].value.transform.app.position.z},
+                            position: {x: this.rightHandArray[0].transform.app.position.x + 0.1, y: -0.4, z: this.rightHandArray[0].transform.app.position.z},
                             scale: { x: 1, y: 1, z: 1 },
                             rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
                         }
@@ -757,7 +758,7 @@ export default class MREBlackjack {
                     // Parent the glTF model to the text actor.
                     transform: {
                         local: {
-                            position: {x: this.leftHandArray[0].value.transform.app.position.x - 0.1, y: -0.4, z: this.leftHandArray[0].value.transform.app.position.z},
+                            position: {x: this.leftHandArray[0].transform.app.position.x - 0.1, y: -0.4, z: this.leftHandArray[0].transform.app.position.z},
                             scale: { x: 1, y: 1, z: 1 },
                             rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
                         }
@@ -792,7 +793,7 @@ export default class MREBlackjack {
                 },
             }
         });
-        this.desk = deskPromise.value;
+        this.desk = deskPromise;
         // console.log(this.desk);
     }
        private hitAnimation() {
@@ -909,14 +910,14 @@ export default class MREBlackjack {
             this.rootActor.destroy();
             this.createRootActor();
 
-            if (game.getState().deck.length === 0) {
+            if (game.getState().deck.length < 5) {
                 game.setState({deck: this.shuffle(this.JSON)});
             }
             game.dispatch(actions.deal());
             this.createPlayerCards();
             this.createDealerCards();
             this.displayWinnerRight();
-            this.roundText.destroy();
+            
         });
 
       }
