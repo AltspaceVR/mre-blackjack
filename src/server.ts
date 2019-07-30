@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { log, WebHost } from '@microsoft/mixed-reality-extension-sdk';
+import { log, WebHost, Asset, AssetContainer } from '@microsoft/mixed-reality-extension-sdk';
 import dotenv from 'dotenv';
 import { resolve as resolvePath } from 'path';
 import App from './app';
@@ -22,5 +22,7 @@ const server = new WebHost({
     baseDir: resolvePath(__dirname, '../public')
 });
 
+const assets = AssetContainer
+
 // Handle new application sessions
-server.adapter.onConnection(context => new App(context, server.baseUrl));
+server.adapter.onConnection(context => new App(context, server.baseUrl, new assets(context)));

@@ -8,7 +8,7 @@ import {
     AnimationEaseCurves,
     AnimationKeyframe,
     AnimationWrapMode,
-    AssetGroup,
+    AssetContainer,
     ButtonBehavior,
     Context,
     PrimitiveShape,
@@ -16,12 +16,10 @@ import {
     TextAnchorLocation,
     Vector3,
     RigidBody,
-    ForwardPromise,
     Plane,
     Sound,
     Asset,
     Material,
-    AssetManager,
     Texture,
     Text,
 } from '@microsoft/mixed-reality-extension-sdk';
@@ -78,31 +76,33 @@ export default class MREBlackjack {
     // Here, we're creating null anctors. We'll set the values of the forwarded promises of the created GLTFs to these variables for reference.
     private rootActor: Actor;
     private lightActor: Actor;
-    private hitLabel: Actor;
     private hitButton: Actor;
     private dealLabel: Actor;
     private dealButton: Actor;
-    private stayLabel: Actor;
+
     private stayButton: Actor;
-    private newRoundLabel: Actor;
-    private newRoundButton: Actor;
-    private doubleDownLabel: Actor;
+
     private doubleDownButton: Actor;
-    private splitLabel: Actor;
+
     private splitButton: Actor;
+    private yesButton: Actor;
+    private noButton: Actor;
+    private roundText: Actor;
 
     private desk: Actor;
-    private blackjackDealer: Actor;
 // tslint:disable-next-line: max-line-length
     // Same concept as before only this time using an an array, we want to put the actors into an array so that it will be easier to add behaviors to all of the actors later.
 
-    private rightHandArray: Array<ForwardPromise<Actor>> = [];
-    private leftHandArray: Array<ForwardPromise<Actor>> = [];
+    private rightHandArray: Array<Actor> = [];
+    private leftHandArray: Array<Actor> = [];
+    
 
-    private cardTextures: Array<ForwardPromise<Texture>> = [];
-    private cardMateriels: Array<ForwardPromise<Material>> = [];
+    private cardTextures: Array<Texture> = [];
+    private cardMateriels: Array<Material> = [];
     private cardTextureSheet: Texture;
-
+    // Here we're creating an array JSON data that corresponds to cards in a deck.
+    // The reason that this array is in JSON format is because the NPM package that we're using generates card data in this format.
+    // We're going to add an extra value called "Material" and mutate the state of the blackjack engine later on.
     private JSON: CardJSON[] = [ { text: "2", suite: "spades", value: 2, color: "B" },
     { text: "3", suite: "spades", value: 3, color: "B" },
     { text: "4", suite: "spades", value: 4, color: "B" },
@@ -156,8 +156,11 @@ export default class MREBlackjack {
     { text: "K", suite: "diamonds", value: 10, color: "R" },
     { text: "A", suite: "diamonds", value: 1, color: "R" }]
 
-    constructor(private context: Context, private baseUrl: string) {
+    private blackJackWin: Sound
+
+    constructor(private context: Context, private baseUrl: string, private assets: AssetContainer) {
         this.context.onStarted(() => this.started());
+        this.assets = new AssetContainer(this.context);
     }
 
     /**
@@ -173,12 +176,12 @@ export default class MREBlackjack {
             this.createStayButton(),
             this.createDesk(),
             this.createRootActor(),
-            this.createNewRoundButton(),
             this.createSplitButton(),
             this.createDeckIndicator(),
             this.createDoubleDownButton(),
             this.loadCardTextures(),
             this.createCardMaterials(),
+            this.loadSound(),
 
         ]).catch(() => {
                 console.log('Hello there');
@@ -188,12 +191,12 @@ export default class MREBlackjack {
         this.hitAnimation();
         this.dealAnimation();
         this.stayAnimation();
-        this.newRoundAnimation();
         this.splitAnimation();
         this.doubleDownAnimation();
+        
 
         for(let i = 0; i < 52; i++){
-            this.JSON[i].material = this.cardMateriels[i].value;
+            this.JSON[i].material = this.cardMateriels[i];
         }
         game.setState({deck: this.shuffle(this.JSON)});
     }
@@ -201,19 +204,19 @@ export default class MREBlackjack {
 
     private playerOneHandAnchor(Vector3?: Vector3){
 
-        return this.desk.children[0].findChildrenByName('P1_Hand', false)[0].transform.app.position
+        return this.desk.children[0].findChildrenByName('P1_Hand', false)[0].transform.app.position;
 
     }
 
     private dealerHandAnchor(Vector3?: Vector3){
 
-        return this.desk.children[0].findChildrenByName('Dealer_Hand', false)[0].transform.app.position
+        return this.desk.children[0].findChildrenByName('Dealer_Hand', false)[0].transform.app.position;
 
     }
 
     private playerPotAnchor(Vector3?: Vector3){
 
-        return this.desk.children[0].findChildrenByName('P1_Pot', false)[0].transform.app.position
+        return this.desk.children[0].findChildrenByName('P1_Pot', false)[0].transform.app.position;
 
     }
 
@@ -237,10 +240,10 @@ export default class MREBlackjack {
             for (let cardColumn = 0; cardColumn < 9; cardColumn++){
                 let posX = 15 + (16 + 210) * cardColumn;
                 let posY = 2048 - (283 + 50) * (cardRow + 1);
-                this.cardMateriels.push(this.context.assetManager.createMaterial('cardMaterial',{
+                this.cardMateriels.push(this.assets.createMaterial('cardMaterial',{
                     mainTextureId: this.cardTextureSheet.id,
                     mainTextureOffset: {x:  posX / 2048, y: posY / 2048},
-                    mainTextureScale: {x: .1, y: .14},
+                    mainTextureScale: {x: .1, y: .134}, //1/14
                 }));
 
             }
@@ -248,11 +251,17 @@ export default class MREBlackjack {
 
       }
       private async loadCardTextures() {
-        const cardTexturePromise =  this.context.assetManager.createTexture('card', {
+        const cardTexturePromise =  this.assets.createTexture('card', {
             uri: `${this.baseUrl}/card-texture-sheet.png`,
             // resolution: {x: 2048, y: 2048}
         });
-        this.cardTextureSheet = cardTexturePromise.value;
+        this.cardTextureSheet = cardTexturePromise;
+    }
+
+    private async loadSound(){
+
+        this.blackJackWin = this.assets.createSound('blackjackwin', { uri: '${this.baseUrl}/CAABlackJackWin.wav' });
+        
     }
     /**
      * This method will be called every time the Dealer DEALS or the User HITS or STANDS.
@@ -281,7 +290,8 @@ export default class MREBlackjack {
                             }
                         }
                     });
-
+                    this.newRound();
+                    this.newRoundAnimation();
 // tslint:disable-next-line: max-line-length
                 } else if (game.getState().handInfo.right.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.right.playerValue.hi > game.getState().dealerValue.hi ){
                     Actor.CreateEmpty(this.context, {
@@ -301,6 +311,9 @@ export default class MREBlackjack {
                             }
                         }
                     });
+                    this.rootActor.startSound(this.blackJackWin.id, { /* options */ });
+                    this.newRound();
+                    this.newRoundAnimation();
                 } else if (game.getState().handInfo.right.playerValue.hi === game.getState().dealerValue.hi){
 
                     Actor.CreateEmpty(this.context, {
@@ -320,7 +333,10 @@ export default class MREBlackjack {
                             }
                         }
                     });
+                    this.newRound();
+                    this.newRoundAnimation();
                 }
+                
             }
     }
 
@@ -348,6 +364,8 @@ export default class MREBlackjack {
                     }
                 });
                 // game.setState({stage: 'ready'});
+                this.newRound();
+                this.newRoundAnimation();
 
 // tslint:disable-next-line: max-line-length
             } else if (game.getState().handInfo.left.playerHasBlackjack || game.getState().dealerHasBusted === true || game.getState().handInfo.left.playerValue.hi > game.getState().dealerValue.hi ){
@@ -368,6 +386,8 @@ export default class MREBlackjack {
                         }
                     }
                 });
+                this.newRound();
+                this.newRoundAnimation();
             }
         } else if ( game.getState().handInfo.left.playerValue.hi === game.getState().dealerValue.hi){
             Actor.CreateEmpty(this.context, {
@@ -387,6 +407,8 @@ export default class MREBlackjack {
                     }
                 }
             });
+            this.newRound();
+            this.newRoundAnimation();
         }
 }
     /**
@@ -402,7 +424,7 @@ export default class MREBlackjack {
                 // Parent the glTF model to the text actor.
             }
         });
-        this.rootActor = rootActorPromise.value;
+        this.rootActor = rootActorPromise;
     }
 
     private createLightActor() {
@@ -418,219 +440,155 @@ export default class MREBlackjack {
                 }
             }
         });
-        this.lightActor = lightActorPromise.value;
+        this.lightActor = lightActorPromise;
     }
-    private async createHitButton() {
-        const hitLabelPromise = Actor.CreateEmpty(this.context, {
+
+
+    private async newRound(){
+
+        const roundTextPromise = Actor.CreateEmpty(this.context, {
             actor: {
-                name: 'Text',
+                parentId: this.rootActor.id,
+                name: 'New Round?',
                 transform: {
-                    // Positions the text
-                    app: { position: { x: 0.5, y: -0.8, z: -1.1 } }
+                    app: { position: { x: 0, y: -0.7, z: -0.7 } }
                 },
-               // Here we're configuring the properties of the displayed text.
                 text: {
-                    contents: "Hit",
+                    contents: "Play Again?",
                     anchor: TextAnchorLocation.MiddleCenter,
                     color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
                     height: 0.1,
                 }
             }
         });
+        
+        this.roundText = roundTextPromise;
+
+        // Load a glTF model
+        const yesButtonPromise = Actor.CreateFromGltf(this.context, {
+        // at the given URL
+        resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Yes.glb`,
+        // and spawn box colliders around the meshes.
+        colliderType: 'box',
+        // Also apply the following generic actor properties.
+        actor: {
+            parentId: this.roundText.id,
+            name: 'New Round',
+            // Parent the glTF model to the text actor.
+            transform: {
+                local: {
+                    scale: { x: 0.8, y: 1, z: 1.1    },
+                    rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
+                }
+            }
+        }
+    });
+
+        this.yesButton = yesButtonPromise;
+
+
+    }
+    private async createHitButton() {
+
 
         // Assigns the currently null Actor to the promise value
-        this.hitLabel = hitLabelPromise.value;
+  
 
         const hitButtonPromise = Actor.CreateFromGltf(this.context, {
             // assigning the actor an art asset
-            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Hit.glb`,
             // and spawn box colliders around the meshes.
             colliderType: 'box',
             // Also apply the following generic actor properties.
             actor: {
                 name: 'Hit Button',
-                // Parent the glTF model to the text actor.
-                parentId: this.hitLabel.id,
                 transform: {
                     local: {
-                        scale: { x: 0.005, y: 0.005, z: 0.005 },
-                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                        scale: { x: 0.5, y: 0.5, z: 0.5 },
+                        rotation: Quaternion.FromEulerAngles(100, -Math.PI, 0),
+                        position: { x: 0.5, y: -0.8, z: -0.8 }
                     }
                 }
             }
         });
-        this.hitButton = hitButtonPromise.value;
+        this.hitButton = hitButtonPromise;
 
     }
 
     private async createStayButton() {
-        const stayLabelPromise = Actor.CreateEmpty(this.context, {
-            actor: {
-                name: 'Text',
-                transform: {
-                    // Positions the text
-                    app: { position: { x: 1, y: -0.8, z: -1.4 } }
-                },
-                // Here we're configuring the properties of the displayed text.
-                text: {
-                    contents: "Stay",
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.1,
-                }
-            }
-        });
-
-        // Assigns the currently null Actor to the promise value
-        this.stayLabel = stayLabelPromise.value;
 
         const stayButtonPromise = Actor.CreateFromGltf(this.context, {
             // assigning the actor an art asset
-            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Stay.glb`,
             // and spawn box colliders around the meshes.
             colliderType: 'box',
             // Also apply the following generic actor properties.
             actor: {
                 name: 'Stay Button',
                 // Parent the glTF model to the text actor.
-                parentId: this.stayLabel.id,
                 transform: {
                     local: {
-                        scale: { x: 0.005, y: 0.005, z: 0.005 },
-                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                        scale: { x: 0.5, y: 0.5, z: 0.5 },
+                        rotation: Quaternion.FromEulerAngles(100, -Math.PI, 0),
+                        position: { x: 0.5, y: -0.9, z: -0.8 }
                     }
                 }
             }
         });
-        this.stayButton = stayButtonPromise.value;
+        this.stayButton = stayButtonPromise;
 
     }
 
     private async createDoubleDownButton() {
-        const doubleDownLabelPromise = Actor.CreateEmpty(this.context, {
-            actor: {
-                name: 'Double Down Text',
-                transform: {
-                    // Positions the text
-                    app: { position: { x: 1, y: -0.8, z: -1.2 } }
-                },
-                // Here we're configuring the properties of the displayed text.
-                text: {
-                    contents: "Double Down",
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.1,
-                }
-            }
-        });
-
-        // Assigns the currently null Actor to the promise value
-        this.doubleDownLabel = doubleDownLabelPromise.value;
 
         const doubleDownButtonPromise = Actor.CreateFromGltf(this.context, {
             // assigning the actor an art asset
-            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_DoubleDown.glb`,
             // and spawn box colliders around the meshes.
             colliderType: 'box',
             // Also apply the following generic actor properties.
             actor: {
-                name: 'Stay Button',
+                name: 'DoubleDown Button',
                 // Parent the glTF model to the text actor.
-                parentId: this.doubleDownLabel.id,
                 transform: {
                     local: {
-                        scale: { x: 0.005, y: 0.005, z: 0.005 },
-                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                        scale: { x: 0.5, y: 0.5, z: 0.5 },
+                        rotation: Quaternion.FromEulerAngles(100, -Math.PI, 0),
+                        position: { x: 0.6, y: -0.8, z: -0.8 }
                     }
                 }
             }
         });
-        this.doubleDownButton = doubleDownButtonPromise.value;
+        this.doubleDownButton = doubleDownButtonPromise;
 
     }
 
     private async createDealButton() {
 
-        const dealLabelPromise = Actor.CreateEmpty(this.context, {
-            actor: {
-                name: 'Text',
-                transform: {
-                    app: { position: { x: 0.5, y: -0.8, z: -0.9 } }
-                },
-                text: {
-                    contents: "Deal",
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.1,
-                }
-            }
-        });
 
-        this.dealLabel = dealLabelPromise.value;
+
 
         // Load a glTF model
         const dealButtonPromise = Actor.CreateFromGltf(this.context, {
         // at the given URL
-        resourceUrl: `${this.baseUrl}/card-button.glb`,
+        resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Join.glb`,
         // and spawn box colliders around the meshes.
         colliderType: 'box',
         // Also apply the following generic actor properties.
         actor: {
             name: 'Deal Button',
             // Parent the glTF model to the text actor.
-            parentId: this.dealLabel.id,
             transform: {
                 local: {
-                    scale: { x: 0.005, y: 0.005, z: 0.005 },
-                    rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                    scale: { x: 1, y: 1, z: 1},
+                    rotation: Quaternion.FromEulerAngles(0, -Math.PI, 0),
+                    position: { x: 0, y: -0.8, z: -0.9 }
                 }
             }
         }
     });
 
-        this.dealButton = dealButtonPromise.value;
-    }
-
-    private async createNewRoundButton() {
-
-        const newRoundLabelPromise = Actor.CreateEmpty(this.context, {
-            actor: {
-                name: 'Text',
-                transform: {
-                    app: { position: { x: 1, y: -0.8, z: -0.9 } }
-                },
-                text: {
-                    contents: "New Round",
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.1,
-                }
-            }
-        });
-
-        this.newRoundLabel = newRoundLabelPromise.value;
-
-        // Load a glTF model
-        const newRoundButtonPromise = Actor.CreateFromGltf(this.context, {
-        // at the given URL
-        resourceUrl: `${this.baseUrl}/card-button.glb`,
-        // and spawn box colliders around the meshes.
-        colliderType: 'box',
-        // Also apply the following generic actor properties.
-        actor: {
-            name: 'New Round',
-            // Parent the glTF model to the text actor.
-            parentId: this.newRoundLabel.id,
-            transform: {
-                local: {
-                    scale: { x: 0.005, y: 0.005, z: 0.005 },
-                    rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
-                }
-            }
-        }
-    });
-
-        this.newRoundButton = newRoundButtonPromise.value;
+        this.dealButton = dealButtonPromise;
     }
 
     private async createDealerCards() {
@@ -662,45 +620,26 @@ export default class MREBlackjack {
     }
 
     private async createSplitButton() {
-        const splitLabelPromise = Actor.CreateEmpty(this.context, {
-            actor: {
-                name: 'Text',
-                transform: {
-                    // Positions the text
-                    app: { position: { x: 0.5, y: -0.8, z: -1.4 } }
-                },
-                // Here we're configuring the properties of the displayed text.
-                text: {
-                    contents: "Split",
-                    anchor: TextAnchorLocation.MiddleCenter,
-                    color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-                    height: 0.1,
-                }
-            }
-        });
-
-        // Assigns the currently null Actor to the promise value
-        this.splitLabel = splitLabelPromise.value;
 
         const splitButtonPromise = Actor.CreateFromGltf(this.context, {
             // assigning the actor an art asset
-            resourceUrl: `${this.baseUrl}/card-button.glb`,
+            resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Split.glb`,
             // and spawn box colliders around the meshes.
             colliderType: 'box',
             // Also apply the following generic actor properties.
             actor: {
                 name: 'Hit Button',
                 // Parent the glTF model to the text actor.
-                parentId: this.splitLabel.id,
                 transform: {
                     local: {
-                        scale: { x: 0.005, y: 0.005, z: 0.005 },
-                        rotation: Quaternion.FromEulerAngles(600, -Math.PI, 0),
+                        scale: { x: 0.5, y: 0.5, z: 0.5 },
+                        rotation: Quaternion.FromEulerAngles(100, -Math.PI, 0),
+                        position: { x: 0.6, y: -0.9, z: -0.8 }
                     }
                 }
             }
         });
-        this.splitButton = splitButtonPromise.value;
+        this.splitButton = splitButtonPromise;
 
     }
 
@@ -709,10 +648,10 @@ export default class MREBlackjack {
         const leftHandArray = game.getState().handInfo.left.cards;
         let rightCardPositionX = 0.5;
         let rightCardPositionY = 0;
-        let rightCardPositionZ = 0;
+        let rightCardPositionZ = 0.2;
         let leftCardPositionX = 0.2;
         let leftCardPositionY = 0;
-        let leftCardPositionZ = 0
+        let leftCardPositionZ = -0.2;
         for(let card = 0; card < rightHandArray.length; card++){
 
             // Load a glTF model
@@ -771,7 +710,7 @@ export default class MREBlackjack {
             });
                 leftCardPositionX -= 0.1;
                 leftCardPositionY += 0.01;
-                leftCardPositionZ += 0.1
+                leftCardPositionZ += 0.1;
                 this.leftHandArray.push(leftPlayerCard);
             }
         }
@@ -798,7 +737,7 @@ export default class MREBlackjack {
                     transform: {
                         local: {
                             // tslint:disable-next-line: max-line-length
-                            position: {x: this.rightHandArray[0].value.transform.app.position.x + 0.1, y: -0.4, z: this.rightHandArray[0].value.transform.app.position.z},
+                            position: {x: this.rightHandArray[0].transform.app.position.x + 0.1, y: -0.4, z: this.rightHandArray[0].transform.app.position.z},
                             scale: { x: 1, y: 1, z: 1 },
                             rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
                         }
@@ -819,7 +758,7 @@ export default class MREBlackjack {
                     // Parent the glTF model to the text actor.
                     transform: {
                         local: {
-                            position: {x: this.leftHandArray[0].value.transform.app.position.x - 0.1, y: -0.4, z: this.leftHandArray[0].value.transform.app.position.z},
+                            position: {x: this.leftHandArray[0].transform.app.position.x - 0.1, y: -0.4, z: this.leftHandArray[0].transform.app.position.z},
                             scale: { x: 1, y: 1, z: 1 },
                             rotation: Quaternion.FromEulerAngles(0, 0, 1.5),
                         }
@@ -854,24 +793,24 @@ export default class MREBlackjack {
                 },
             }
         });
-        this.desk = deskPromise.value;
+        this.desk = deskPromise;
         // console.log(this.desk);
     }
        private hitAnimation() {
 
         const hitButtonBehavior = this.hitButton.setBehavior(ButtonBehavior);
-        this.hitLabel.enableAnimation('Spin');
     // Trigger the grow/shrink animations on hover.
         hitButtonBehavior.onHover('enter', () => {
         this.hitButton.animateTo(
-            { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.5, AnimationEaseCurves.EaseOutSine);
     });
         hitButtonBehavior.onHover('exit', () => {
         this.hitButton.animateTo(
-            { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.5, AnimationEaseCurves.EaseOutSine);
     });
 
-    // When hit button is clicked trigger game dispatch to hit
+    // We placed the HIT action in an onclick as we want the game's STATE to mutate based on the click.
+    // Since there is a possibility of multiple HANDS due to SPLITTING we will call the HIT action based on the STAGE.
         hitButtonBehavior.onClick(() => {
             if (game.getState().stage === 'player-turn-right'){
                 this.hitButton.enableAnimation('DoAFlip');
@@ -884,9 +823,7 @@ export default class MREBlackjack {
                 this.createRootActor();
                 this.createPlayerCards();
                 this.createDealerCards();
-                console.log(game.getState().stage)
                 this.displayWinnerRight();
-                
             } else if (game.getState().stage === 'player-turn-left'){
                 this.hitButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.hit({ position : 'left' }));
@@ -896,34 +833,11 @@ export default class MREBlackjack {
                 this.createDealerCards();
                 this.displayWinnerRight();
                 this.displayWinnerLeft();
-                
             }
     });
 
        }
 
-       private newRoundAnimation() {
-        const newRoundButtonBehavior = this.newRoundButton.setBehavior(ButtonBehavior);
-    // Trigger the grow/shrink animations on hover.
-        newRoundButtonBehavior.onHover('enter', () => {
-        this.newRoundButton.animateTo(
-            { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
-    });
-        newRoundButtonBehavior.onHover('exit', () => {
-        this.newRoundButton.animateTo(
-            { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.03, AnimationEaseCurves.EaseOutSine);
-    });
-
-    // When hit button is clicked trigger game dispatch to hit
-        newRoundButtonBehavior.onClick(() => {
-            game.setState({stage: 'ready'});
-            game.dispatch(actions.restore());
-            this.rootActor.destroy();
-            this.createRootActor();
-            // console.log(game.getState())
-    });
-
-       }
 
        private splitAnimation() {
 
@@ -931,14 +845,12 @@ export default class MREBlackjack {
     // Trigger the grow/shrink animations on hover.
         splitButtonBehavior.onHover('enter', () => {
         this.splitButton.animateTo(
-            { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.5, AnimationEaseCurves.EaseOutSine);
     });
         splitButtonBehavior.onHover('exit', () => {
         this.splitButton.animateTo(
-            { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.5, AnimationEaseCurves.EaseOutSine);
     });
-
-    // When hit button is clicked trigger game dispatch to hit
         splitButtonBehavior.onClick(() => {
             game.dispatch(actions.split());
             this.rootActor.destroy();
@@ -954,11 +866,11 @@ export default class MREBlackjack {
     // Trigger the grow/shrink animations on hover.
         doubleDownButtonBehavior.onHover('enter', () => {
         this.doubleDownButton.animateTo(
-            { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.5, AnimationEaseCurves.EaseOutSine);
     });
         doubleDownButtonBehavior.onHover('exit', () => {
         this.doubleDownButton.animateTo(
-            { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+            { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.5, AnimationEaseCurves.EaseOutSine);
     });
 
     // When hit button is clicked trigger game dispatch to hit
@@ -973,8 +885,43 @@ export default class MREBlackjack {
     });
 
        }
+
+      private newRoundAnimation(){
+
+        
+        const newRoundBehavior = this.yesButton.setBehavior(ButtonBehavior);
+
+        newRoundBehavior.onHover('enter', () => {
+            this.yesButton.animateTo(
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 1, y: 1, z: 1 } } } }, 1, AnimationEaseCurves.EaseOutSine);
+        });
+        newRoundBehavior.onHover('exit', () => {
+            this.yesButton.animateTo(
+// tslint:disable-next-line: max-line-length
+                { transform: { local: { scale: { x: 1, y: 1, z: 1 } } } }, 1, AnimationEaseCurves.EaseOutSine);
+        });
+
+        // When deal button is clicked trigger DEAL action.
+        newRoundBehavior.onClick(() => {
+
+            game.setState({stage: 'ready'});
+            game.dispatch(actions.restore());
+            this.rootActor.destroy();
+            this.createRootActor();
+
+            if (game.getState().deck.length < 5) {
+                game.setState({deck: this.shuffle(this.JSON)});
+            }
+            game.dispatch(actions.deal());
+            this.createPlayerCards();
+            this.createDealerCards();
+            this.displayWinnerRight();
+            
+        });
+
+      }
       private dealAnimation() {
-        this.dealLabel.enableAnimation('Spin');
 
         // Button behaviors have two pairs of events: hover start/stop, and click start/stop.
 
@@ -983,33 +930,35 @@ export default class MREBlackjack {
         dealbuttonBehavior.onHover('enter', () => {
             this.dealButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 1, y: 1, z: 1 } } } }, 1, AnimationEaseCurves.EaseOutSine);
         });
         dealbuttonBehavior.onHover('exit', () => {
             this.dealButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 1, y: 1, z: 1 } } } }, 1, AnimationEaseCurves.EaseOutSine);
         });
 
-        // When deal button is clicked trigger deal action.
+        // When deal button is clicked trigger DEAL action.
         dealbuttonBehavior.onClick(() => {
+
+            game.setState({stage: 'ready'});
+            game.dispatch(actions.restore());
+            this.rootActor.destroy();
+            this.createRootActor();
 
             if (game.getState().deck.length === 0) {
                 game.setState({deck: this.shuffle(this.JSON)});
             }
-            this.dealButton.enableAnimation('DoAFlip');
             game.dispatch(actions.deal());
             this.createPlayerCards();
             this.createDealerCards();
             this.displayWinnerRight();
-            // console.log(game.getState())
-            
+            this.dealButton.destroy();
         });
        }
 
        private stayAnimation() {
 
-        this.stayLabel.enableAnimation('Spin');
 
         // Button behaviors have two pairs of events: hover start/stop, and click start/stop.
 
@@ -1018,18 +967,17 @@ export default class MREBlackjack {
         stayButtonBehavior.onHover('enter', () => {
             this.stayButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.006, y: 0.006, z: 0.006 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.5, AnimationEaseCurves.EaseOutSine);
         });
         stayButtonBehavior.onHover('exit', () => {
             this.stayButton.animateTo(
 // tslint:disable-next-line: max-line-length
-                { transform: { local: { scale: { x: 0.005, y: 0.005, z: 0.005 } } } }, 0.003, AnimationEaseCurves.EaseOutSine);
+                { transform: { local: { scale: { x: 0.5, y: 0.5, z: 0.5 } } } }, 0.5, AnimationEaseCurves.EaseOutSine);
         });
 
-        // When deal button is clicked trigger deal action.
+        // We placed the STAND action in an onclick as we want the game's STATE to mutate based on the click.
+        // Since there is a possibility of multiple HANDS due to SPLITTING we will call the STAND action based on the STAGE.
         stayButtonBehavior.onClick(() => {
-
-
             if(game.getState().stage === 'player-turn-right'){
                 this.stayButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.stand('right'));
@@ -1042,6 +990,8 @@ export default class MREBlackjack {
                 this.createDealerCards();
                 this.createPlayerCards();
                 this.displayWinnerRight();
+                // console.log(game.getState().history)
+                console.log(game.getState().finalBet)
             } else if (game.getState().stage === 'player-turn-left'){
                 this.stayButton.enableAnimation('DoAFlip');
                 game.dispatch(actions.stand({ position : 'left' }));
@@ -1051,7 +1001,6 @@ export default class MREBlackjack {
                 this.createPlayerCards();
                 this.displayWinnerRight();
                 this.displayWinnerLeft();
-                // console.log(game.getState())
             }
         });
 
