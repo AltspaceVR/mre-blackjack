@@ -73,6 +73,6 @@ Tyrell Gordon
 
 ## Acknowledgments
 
-* Eric Anderson and Soren Hannibel Soren Hannibal Nielsen for guidence
+* Eric Anderson and Soren Hannibel Soren Hannibal Nielsen for guidance
 * Lingyi Qu for advice
 * Big thanks to Kedoska and his engine-blackjack npm
