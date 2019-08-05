@@ -208,6 +208,11 @@ export default class MREBlackjack {
         return this.desk.children[0].findChildrenByName('P1_Hand', false)[0].transform.app.position;
 
     }
+    private playerTwoHandAnchor(pos?: Vector3) {
+
+        return this.desk.children[0].findChildrenByName('P2_Hand', false)[0].transform.app.position;
+
+    }
 
     private dealerHandAnchor(pos?: Vector3) {
 
@@ -566,7 +571,7 @@ export default class MREBlackjack {
     private async createDealButton() {
 
         // Load a glTF model
-        const dealButtonPromise = Actor.CreateFromGltf(this.context, {
+        this.dealButton = Actor.CreateFromGltf(this.context, {
             // at the given URL
             resourceUrl: `${this.baseUrl}/UI/BlackjackUI_Button_Join.glb`,
             // and spawn box colliders around the meshes.
@@ -584,8 +589,6 @@ export default class MREBlackjack {
                 }
             }
         });
-
-        this.dealButton = dealButtonPromise;
     }
 
     private async createDealerCards() {
