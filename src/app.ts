@@ -61,14 +61,14 @@ game.setState({
     }
 });
 
-// game.setState({rules: {insurance: false}});
-game.dispatch(actions.join({ seatPosition: 'P2' }));
-game.dispatch(actions.join({ seatPosition: 'P3' }));
-game.dispatch(actions.join({ seatPosition: 'P4' }));
-// console.log(game.getState())
-console.log(game.getState().seat[0].handInfoP2.right)
-console.log(game.getState().seat[1].handInfoP3.right)
-console.log(game.getState().seat[2].handInfoP4.right)
+// // game.setState({rules: {insurance: false}});
+// game.dispatch(actions.join({ seatPosition: 'P2' }));
+// game.dispatch(actions.join({ seatPosition: 'P3' }));
+// game.dispatch(actions.join({ seatPosition: 'P4' }));
+// // console.log(game.getState())
+// console.log(game.getState().seat[0].handInfoP2.right)
+// console.log(game.getState().seat[1].handInfoP3.right)
+// console.log(game.getState().seat[2].handInfoP4.right)
 /**
  * The main class of this app. All the logic goes here.
  */
